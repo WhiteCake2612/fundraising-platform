@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { NavLink, Link, Outlet, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { api, useApi } from '../lib/api.js';
 import { ago } from '../lib/format.js';
+import { Roll } from './motion.jsx';
 
 export const AuthCtx = createContext(null);
 export const MetaCtx = createContext(null);
@@ -15,7 +16,7 @@ const NAV = {
 };
 
 export function Brand() {
-  return <Link to="/" className="brand" aria-label="RAISE01 home">RAISE01<small>CAPITAL · SYSTEMS</small></Link>;
+  return <Link to="/" className="brand" aria-label="RAISE01 home"><span>RAISE<b>01</b></span><small>CAPITAL · SYSTEMS</small></Link>;
 }
 
 export function RequireRole({ role }) {
@@ -43,10 +44,10 @@ function Notifications() {
         Alerts{unread ? <span style={{ color: 'var(--accent)' }}>●{unread}</span> : ''}
       </button>
       {open && (
-        <div className="card" style={{ position: 'absolute', right: 0, top: 40, width: 340, maxHeight: 420, overflow: 'auto', zIndex: 30, padding: 0 }}>
+        <div className="card" style={{ position: 'absolute', right: 0, top: 44, width: 340, animation: 'dropIn 0.3s var(--ease)', boxShadow: '0 24px 60px rgba(0,0,0,0.6)', maxHeight: 420, overflow: 'auto', zIndex: 30, padding: 0 }}>
           {!q.data?.notifications.length && <div className="muted" style={{ padding: 16 }}>No notifications.</div>}
           {q.data?.notifications.map(n => (
-            <button key={n.id} onClick={() => { setOpen(false); if (n.link) nav(n.link); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 16px', border: 0, borderBottom: '1px solid var(--line)', background: n.read_at ? 'transparent' : '#f6fbfa', cursor: 'pointer' }}>
+            <button key={n.id} onClick={() => { setOpen(false); if (n.link) nav(n.link); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 16px', border: 0, borderBottom: '1px solid var(--line)', background: n.read_at ? 'transparent' : 'rgba(46,230,201,0.06)', boxShadow: n.read_at ? 'none' : 'inset 2px 0 0 var(--accent)', color: 'inherit', cursor: 'pointer' }}>
               <div style={{ fontWeight: 600 }}>{n.title}</div>
               {n.body && <div className="small muted">{n.body}</div>}
               <div className="label">{ago(n.created_at)}</div>
@@ -70,7 +71,7 @@ function AppShell() {
           <Brand />
           <button className="btn ghost sm menu-toggle" onClick={() => setOpen(!open)} aria-expanded={open}>Menu</button>
           <nav className={`nav ${open ? 'open' : ''}`} aria-label="Primary">
-            {NAV[user.role].map(([to, label, end]) => <NavLink key={to} to={to} end={end}>{label}</NavLink>)}
+            {NAV[user.role].map(([to, label, end]) => <NavLink key={to} to={to} end={end}><Roll>{label}</Roll></NavLink>)}
           </nav>
           <div className="who">
             <Notifications />
@@ -83,7 +84,7 @@ function AppShell() {
           Your email address is not yet verified. Check your inbox for the verification link.
         </div>
       )}
-      <main className="page"><Outlet /></main>
+      <main className="page page-enter" key={loc.pathname}><Outlet /></main>
     </>
   );
 }

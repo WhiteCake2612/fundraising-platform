@@ -27,7 +27,7 @@ export default function InvestorDashboard() {
           {d.recommended.length ? (
             <div className="grid g2">
               {d.recommended.map(x => (
-                <Link key={x.company_id} to={`/investor/opportunities/${x.company_id}`} className="card row between" style={{ textDecoration: 'none' }}>
+                <Link key={x.company_id} to={`/investor/opportunities/${x.company_id}`} className="card hover corners row between reveal" style={{ textDecoration: 'none' }}>
                   <div className="stack" style={{ gap: 4 }}>
                     <span className="label">{stageLabel(x.stage)} · {x.industry}</span>
                     <span className="display d-s">{x.name || `Project ${x.code}`}</span>

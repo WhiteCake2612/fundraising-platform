@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Scramble, CountUp } from './motion.jsx';
 import { ago, date, human, SEV_CLASS, parseMoney, isNum } from '../lib/format.js';
 
 export function PageHead({ kicker, title, sub, children }) {
   return (
     <header className="page-head">
       <div className="meta">
-        {kicker && <span className="label accent">{kicker}</span>}
-        <h1 className="display d-l">{title}</h1>
-        {sub && <span className="muted">{sub}</span>}
+        {kicker && <span className="label accent"><Scramble text={typeof kicker === 'string' ? kicker : ''} duration={500} />{typeof kicker !== 'string' && kicker}</span>}
+        <h1 className="display d-l glitch" data-text={typeof title === 'string' ? title : ''}>{typeof title === 'string' ? <Scramble text={title} trigger="both" /> : title}</h1>
+        {sub && <span className="muted reveal" style={{ '--d': 200 }}>{sub}</span>}
       </div>
       {children && <div className="row">{children}</div>}
     </header>
@@ -29,7 +30,7 @@ export function ErrorBox({ error, onRetry }) {
 }
 
 export function Empty({ title, children }) {
-  return <div className="empty"><div className="display d-s" style={{ color: 'var(--ink-2)' }}>{title}</div>{children && <div style={{ marginTop: 8 }}>{children}</div>}</div>;
+  return <div className="empty reveal"><div className="display d-s" style={{ color: 'var(--ink-2)' }}>{title}</div>{children && <div style={{ marginTop: 8 }}>{children}</div>}</div>;
 }
 
 // Wraps a page's data load: loading → error (with retry) → content.
@@ -84,9 +85,9 @@ export function Status({ s, label }) { return <span className={`badge ${STATUS_C
 
 export function Stat({ label, value, sub, pct }) {
   return (
-    <div className="stat">
+    <div className="stat reveal corners">
       <span className="label">{label}</span>
-      <span className="num">{value}</span>
+      <span className="num">{typeof value === 'string' || typeof value === 'number' ? <CountUp value={value} /> : value}</span>
       {isNum(pct) && <div className="bar"><i style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} /></div>}
       {sub && <span className="sub">{sub}</span>}
     </div>
@@ -94,9 +95,19 @@ export function Stat({ label, value, sub, pct }) {
 }
 
 export function Tabs({ tabs, value, onChange }) {
+  const wrap = useRef();
+  const [ink, setInk] = useState({ left: 0, width: 0 });
+  const measure = () => {
+    const el = wrap.current?.querySelector('[aria-selected="true"]');
+    if (el) setInk({ left: el.offsetLeft, width: el.offsetWidth });
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(measure, [value, tabs.map(t => t.label + t.count).join()]);
+  useEffect(() => { addEventListener('resize', measure); document.fonts?.ready.then(measure); return () => removeEventListener('resize', measure); }, []);
   return (
-    <div className="tabs" role="tablist">
+    <div className="tabs" role="tablist" ref={wrap}>
       {tabs.map(t => <button key={t.key} role="tab" aria-selected={value === t.key} onClick={() => onChange(t.key)}>{t.label}{t.count != null ? ` · ${t.count}` : ''}</button>)}
+      <span className="ink" style={ink} aria-hidden="true" />
     </div>
   );
 }
@@ -104,10 +115,10 @@ export function Tabs({ tabs, value, onChange }) {
 export function Timeline({ items, dark }) {
   if (!items?.length) return <Empty title="No activity yet" />;
   return (
-    <div className={dark ? 'dark card' : ''} style={dark ? { padding: 24 } : undefined}>
+    <div className={dark ? 'dark card frame' : ''} style={dark ? { padding: 24 } : undefined}>
       <div className="timeline">
-        {items.map(a => (
-          <div className="item" key={a.id}>
+        {items.map((a, i) => (
+          <div className="item" key={a.id} style={{ '--i': Math.min(i, 15) }}>
             <div className="when" title={date(a.created_at, true)}>{ago(a.created_at)}{a.actor ? ` · ${a.actor}` : ''}</div>
             <div>{a.summary}</div>
           </div>

@@ -80,7 +80,7 @@ export default function HostDashboard() {
             <div className="card"><h3>Most interest</h3>
               {d.interest.top.length ? d.interest.top.map(t => <Link key={t.id} to={`/host/deals/${t.id}`} className="row between" style={{ padding: '8px 0', borderBottom: '1px solid var(--line)', textDecoration: 'none' }}><span>{t.name}</span><span className="mono">{t.n}</span></Link>) : <div className="small muted">No interest recorded yet.</div>}
             </div>
-            <div className="dark card" style={{ padding: 24 }}>
+            <div className="dark card frame" style={{ padding: 24 }}>
               <span className="label accent">Live activity</span>
               <div className="timeline" style={{ marginTop: 12 }}>
                 {d.recent.map(a => <div className="item" key={a.id}><div className="when">{ago(a.created_at)}{a.company ? ` · ${a.company}` : ''}</div>{a.company_id ? <Link to={`/host/deals/${a.company_id}`} style={{ color: '#ddd' }}>{a.summary}</Link> : a.summary}</div>)}
@@ -96,7 +96,7 @@ export default function HostDashboard() {
 
 function QueueLink({ to, n, label }) {
   return (
-    <Link to={to} className="stat" style={{ textDecoration: 'none', borderLeft: n ? '3px solid var(--accent)' : undefined }}>
+    <Link to={to} className="stat corners" style={{ textDecoration: 'none', borderLeft: n ? '3px solid var(--accent)' : undefined }}>
       <span className="num">{n}</span><span className="label">{label}</span>
     </Link>
   );

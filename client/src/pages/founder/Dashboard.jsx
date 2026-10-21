@@ -20,7 +20,7 @@ export default function FounderDashboard() {
               {d.next.length ? (
                 <div className="stack" style={{ gap: 0 }}>
                   {d.next.map((n, i) => (
-                    <Link key={i} to={n.to} className="row between" style={{ padding: '16px 0', borderBottom: '1px solid var(--line)', textDecoration: 'none' }}>
+                    <Link key={i} to={n.to} className="row between next-step reveal" style={{ padding: '16px 0', borderBottom: '1px solid var(--line)', textDecoration: 'none', '--d': i * 90 }}>
                       <span className="row"><span className="display" style={{ fontSize: 28, color: 'var(--accent)', width: 40 }}>{String(i + 1).padStart(2, '0')}</span><span style={{ fontSize: 16 }}>{n.label}</span></span>
                       <span className="label">Open →</span>
                     </Link>

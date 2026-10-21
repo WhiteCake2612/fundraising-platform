@@ -1,93 +1,27 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
-import { useAuth, Brand } from '../components/Shell.jsx';
+import { useAuth } from '../components/Shell.jsx';
+import { PublicBar } from './Landing.jsx';
+import { Scramble } from '../components/motion.jsx';
+export { Landing } from './Landing.jsx';
 import { Field, ErrorBox, useAction } from '../components/ui.jsx';
 
-function PublicBar() {
-  return (
-    <div className="topbar"><div className="topbar-inner">
-      <Brand />
-      <nav className="nav" style={{ display: 'flex' }}><a href="#how">How it works</a><a href="#founders">Founders</a><a href="#investors">Investors</a></nav>
-      <div className="who"><Link to="/login" className="pill" style={{ textDecoration: 'none' }}>Sign in <span className="dot">→</span></Link></div>
-    </div></div>
-  );
-}
-
-const STEPS = [
-  ['01', 'Submit', 'Founders build a structured company profile and upload decks, statements, models and cap tables into a private data room.'],
-  ['02', 'Screen', 'Figures are extracted with source references and reconciled across documents. Discrepancies are raised as neutral, sourced findings.'],
-  ['03', 'Discover', 'Investors review host-approved, one-page teasers ranked by explainable mandate fit — and swipe.'],
-  ['04', 'Introduce', 'The host controls every introduction, identity disclosure and document grant through to close.'],
-];
-
-export function Landing() {
-  return (
-    <>
-      <PublicBar />
-      <main className="page" style={{ paddingTop: 0 }}>
-        <section className="hero">
-          <div className="stack" style={{ gap: 28 }}>
-            <span className="label accent">Fundraising operating system · Pre-Seed → Series B</span>
-            <h1 className="display d-xl">Raise<br />With<br />Conviction</h1>
-            <div className="stack small" style={{ gap: 6, color: 'var(--ink-2)' }}>
-              <span className="label">◼ Founder portal — profile, data room, teaser</span>
-              <span className="label">◼ Investor portal — mandate-ranked discovery</span>
-              <span className="label">◼ Host control room — screening, intros, pipeline</span>
-            </div>
-            <div className="row">
-              <Link className="btn" to="/register?role=founder">I'm raising</Link>
-              <Link className="btn ghost" to="/register?role=investor">I'm investing</Link>
-            </div>
-          </div>
-          <div className="hero-figure" aria-hidden="true">
-            <div className="line" />
-            <span className="label accent">Deal lifecycle</span>
-            <div className="stack" style={{ gap: 40, position: 'relative' }}>
-              {STEPS.map(([n, t], i) => (
-                <div key={n} style={{ display: 'flex', justifyContent: i % 2 ? 'flex-end' : 'flex-start' }}>
-                  <div style={{ width: '44%', textAlign: i % 2 ? 'left' : 'right' }}>
-                    <div className="display" style={{ fontSize: 44, color: i === 2 ? 'var(--accent)' : '#eee' }}>{n}</div>
-                    <div className="label">{t}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <span className="label">Host-controlled disclosure</span>
-          </div>
-        </section>
-      </main>
-      <section className="dark" id="how">
-        <div className="page">
-          <span className="label accent">How it works</span>
-          <div className="grid g4" style={{ marginTop: 24 }}>
-            {STEPS.map(([n, t, d]) => (
-              <div key={n} className="stack" style={{ borderTop: '1px solid var(--dark-line)', paddingTop: 16 }}>
-                <span className="display d-m" style={{ color: 'var(--accent)' }}>{n}</span>
-                <span className="display d-s">{t}</span>
-                <p style={{ color: '#a9adb2' }}>{d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      <section className="page grid g2" id="founders">
-        <div className="stack"><span className="label accent">For founders</span><h2 className="display d-m">One profile. Every right investor.</h2><p className="muted">Upload once, correct what the analysis extracted, answer clarifications and track your raise. Your documents stay private until the host shares them with an approved introduction.</p></div>
-        <div className="stack" id="investors"><span className="label accent">For investors</span><h2 className="display d-m">Screened deal flow, on mandate.</h2><p className="muted">Comparable one-page teasers with reported figures, projections and open questions clearly separated. Fit scores explain exactly which parts of your mandate are met.</p></div>
-      </section>
-    </>
-  );
-}
 
 function AuthFrame({ title, kicker, children }) {
   return (
     <>
       <PublicBar />
-      <main className="page" style={{ maxWidth: 520 }}>
-        <div className="stack" style={{ gap: 24, paddingTop: 32 }}>
-          <span className="label accent">{kicker}</span>
-          <h1 className="display d-l">{title}</h1>
+      <main className="auth-split page-enter">
+        <div className="stack auth-form" style={{ gap: 24 }}>
+          <span className="label accent"><Scramble text={kicker} /></span>
+          <h1 className="display d-l glitch" data-text={title}><Scramble text={title} trigger="hover" /></h1>
           {children}
+        </div>
+        <div className="auth-art teal-frame" aria-hidden="true">
+          <span className="label accent">RAISE01 · Capital systems</span>
+          <div className="auth-grid">{Array.from({ length: 96 }, (_, i) => <i key={i} style={{ animationDelay: `${(i * 37) % 2400}ms` }} />)}</div>
+          <h2 className="display d-l accent-text" style={{ textAlign: 'right' }}>Keep<br />raising<br />forward.</h2>
         </div>
       </main>
     </>

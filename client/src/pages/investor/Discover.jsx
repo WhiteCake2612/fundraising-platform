@@ -114,7 +114,7 @@ function Deck({ item, next, onAct }) {
   return (
     <div className="deck">
       {next && <div className="swipe-card behind" aria-hidden="true"><OpportunityCard item={next} /></div>}
-      <div ref={ref} className="swipe-card" role="article" aria-label={item.name || `Project ${item.code}`}
+      <div ref={ref} className="swipe-card" data-cursor="DRAG" role="article" aria-label={item.name || `Project ${item.code}`}
         style={{ transform: `translate(${dx}px, ${Math.min(0, dy)}px) rotate(${rot}deg)`, transition: start.current ? 'none' : 'transform 0.25s ease' }}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <div className="stamp yes" style={{ opacity: Math.max(0, dx / THRESHOLD) }}>Interested</div>
