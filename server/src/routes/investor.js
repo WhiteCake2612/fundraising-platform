@@ -156,6 +156,11 @@ export default function investorRoutes({ db, secret }) {
       if (s.action === 'interested' && intro) {
         db.prepare('DELETE FROM introductions WHERE id=?').run(intro.id);
         activity(db, cid, req.user.id, 'interest_withdrawn', `Investor ${req.user.name} undid interest`);
+        const remaining = db.prepare("SELECT COUNT(*) n FROM swipes WHERE company_id=? AND action='interested'").get(cid).n;
+        if (!remaining && db.prepare('SELECT stage FROM deals WHERE company_id=?').get(cid)?.stage === 'interest_received') {
+          db.prepare("UPDATE deals SET stage='discovery', updated_at=datetime('now') WHERE company_id=?").run(cid);
+          activity(db, cid, null, 'stage_change', 'Stage: Investor interest received → Approved for investor discovery (interest withdrawn) [automatic]', true);
+        }
       }
     });
     audit(db, req, 'swipe.undo', 'company', cid, { action: s.action });

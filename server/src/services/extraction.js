@@ -65,6 +65,8 @@ function toNumber(v) {
 }
 
 export function parseSpreadsheet(buffer, { category, currency, filename }) {
+  const isCsv = /\.csv$/i.test(filename || '');
+  const loc = (sheet, cell) => (isCsv ? `CSV cell ${XLSX.utils.encode_cell(cell)}` : `Sheet "${sheet}" ${XLSX.utils.encode_cell(cell)}`);
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: false });
   const metrics = [];
   const textParts = [];
@@ -75,7 +77,7 @@ export function parseSpreadsheet(buffer, { category, currency, filename }) {
     const sheetProjection = /proj|forecast|budget|plan/i.test(sheetName);
 
     if (category === 'cap_table') {
-      metrics.push(...parseCapTable(rows, sheetName));
+      metrics.push(...parseCapTable(rows, sheetName, loc));
       continue;
     }
 
@@ -102,7 +104,7 @@ export function parseSpreadsheet(buffer, { category, currency, filename }) {
             metric, period: p.period, value: normalisePct(metric, v),
             unit: unitFor(metric), currency: unitFor(metric) === 'currency' ? currency : null,
             basis: projection ? 'projection' : 'historical',
-            source_location: `Sheet "${sheetName}" ${XLSX.utils.encode_cell({ r, c: i })}`,
+            source_location: loc(sheetName, { r, c: i }),
           });
         }
       } else {
@@ -113,7 +115,7 @@ export function parseSpreadsheet(buffer, { category, currency, filename }) {
           metric, period: '', value: normalisePct(metric, toNumber(row[vi])),
           unit: unitFor(metric), currency: unitFor(metric) === 'currency' ? currency : null,
           basis: sheetProjection ? 'projection' : 'stated',
-          source_location: `Sheet "${sheetName}" ${XLSX.utils.encode_cell({ r, c: vi })}`,
+          source_location: loc(sheetName, { r, c: vi }),
         });
       }
     }
@@ -121,7 +123,7 @@ export function parseSpreadsheet(buffer, { category, currency, filename }) {
   return { text: textParts.join('\n\n').slice(0, 60_000), metrics };
 }
 
-function parseCapTable(rows, sheetName) {
+function parseCapTable(rows, sheetName, loc) {
   const out = [];
   let hdr = -1, pctCol = -1;
   for (let r = 0; r < Math.min(rows.length, 20); r++) {
@@ -136,7 +138,7 @@ function parseCapTable(rows, sheetName) {
     let v = toNumber(row[pctCol]);
     if (v === null) continue;
     if (v > 1.0001) v = v / 100;
-    out.push({ metric: 'ownership_pct', period: String(name).trim(), value: v, unit: 'pct', currency: null, basis: 'historical', source_location: `Sheet "${sheetName}" ${XLSX.utils.encode_cell({ r, c: pctCol })}` });
+    out.push({ metric: 'ownership_pct', period: String(name).trim(), value: v, unit: 'pct', currency: null, basis: 'historical', source_location: loc(sheetName, { r, c: pctCol }) });
   }
   return out;
 }

@@ -335,7 +335,9 @@ export function summarize(metrics, company) {
   }
   const gm = actual.find(m => m.metric === 'gross_margin' && m.period === latestRev?.period) ||
     (latestRev && actual.find(m => m.metric === 'gross_profit' && m.period === latestRev.period));
+  const cogs = latestRev && actual.find(m => m.metric === 'cogs' && m.period === latestRev.period);
   if (gm) out.gross_margin = { value: gm.metric === 'gross_profit' ? margin(gm.value, latestRev.value) : gm.value, period: gm.period, source: src(gm) };
+  else if (cogs) out.gross_margin = { value: margin(latestRev.value - cogs.value, latestRev.value), period: cogs.period, source: 'Computed: (revenue − cost of sales) ÷ revenue' };
   else if (isNum(company.gross_margin)) out.gross_margin = { value: company.gross_margin, period: 'Founder stated', source: 'Company profile (founder input)' };
   const eb = latestRev && actual.find(m => m.metric === 'ebitda' && m.period === latestRev.period);
   if (eb) out.ebitda_margin = { value: margin(eb.value, latestRev.value), period: eb.period, source: src(eb) };
