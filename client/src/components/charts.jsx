@@ -2,14 +2,14 @@ import { useMemo, useRef, useState } from 'react';
 import { money, pct, stageLabel } from '../lib/format.js';
 import { Icon } from './icons.jsx';
 
-// One colour per investor decision, used by every chart (validated for CVD on the dark surface).
+// One colour per investor decision, used by every chart: gold, sapphire, ruby (validated for CVD on the dark surface).
 export const DECISION = {
-  interested: { label: 'Interested', color: '#3987e5' },
-  saved: { label: 'Saved', color: '#d95926' },
-  passed: { label: 'Passed', color: '#199e70' },
-  deck: { label: 'Not reviewed', color: '#5b6168' },
+  interested: { label: 'Interested', color: '#c98500' },
+  saved: { label: 'Saved', color: '#3987e5' },
+  passed: { label: 'Passed', color: '#d55181' },
+  deck: { label: 'Not reviewed', color: '#6e5e52' },
 };
-export const SERIES = ['#3987e5', '#d95926', '#199e70'];
+export const SERIES = ['#c98500', '#3987e5', '#d55181'];
 
 export const FIT_AXES = { stage: 'Stage', sector: 'Sector', ticket: 'Ticket', geography: 'Geography', traction: 'Traction', other: 'Lead' };
 const ratio = (f) => (f.weight ? f.earned / f.weight : 0);

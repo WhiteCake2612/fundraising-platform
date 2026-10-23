@@ -44,7 +44,7 @@ function Hero() {
     <section className="hero" ref={ref} onPointerMove={move} onPointerLeave={() => { target.current = 0; }} style={vars}>
       <div className="hero-layer">
         <div className="stack" style={{ gap: 26 }}>
-          <span className="label" style={{ color: '#1bc4aa' }}><Scramble text="Fundraising OS · Pre-Seed → Series B" /></span>
+          <span className="label" style={{ color: '#b88a3a' }}><Scramble text="Fundraising OS · Pre-Seed → Series B" /></span>
           <h1 className="display d-xl">Raise<br />With<br />Conviction</h1>
           <div className="stack" style={{ gap: 6 }}>
             <span className="label">▣ Founder portal — data room, teaser</span>
@@ -72,29 +72,29 @@ function Hero() {
         <Link className="btn" to="/register?role=founder"><Roll>I'm raising</Roll></Link>
         <Link className="btn ghost" to="/register?role=investor"><Roll>I'm investing</Roll></Link>
       </div>
-      <a href="#story" className="hero-scroll label" style={{ color: '#555', textDecoration: 'none' }}><i />Scroll</a>
+      <a href="#story" className="hero-scroll label" style={{ color: '#7a6455', textDecoration: 'none' }}><i />Scroll</a>
     </section>
   );
 }
 
 // Concentric "round" rings that draw themselves and rotate — the platform's stand-in for the portrait.
 function Orb({ dark }) {
-  const stroke = dark ? '#2ee6c9' : '#0c0c0c';
+  const stroke = dark ? '#d4a24c' : '#1c0e0a';
   const segs = [{ r: 46, len: 0.72, w: 2.2, s: 18 }, { r: 38, len: 0.55, w: 1, s: -26 }, { r: 30, len: 0.86, w: 3.5, s: 34 }, { r: 21, len: 0.4, w: 1, s: -14 }];
   return (
     <div className="orb">
       <svg viewBox="-50 -50 100 100">
-        <circle r="48" fill="none" stroke={dark ? 'rgba(46,230,201,0.25)' : 'rgba(0,0,0,0.08)'} strokeWidth="0.3" />
+        <circle r="48" fill="none" stroke={dark ? 'rgba(212,162,76,0.25)' : 'rgba(0,0,0,0.08)'} strokeWidth="0.3" />
         {segs.map((s, i) => (
           <g key={i} style={{ animation: reducedMotion() ? 'none' : `spin ${Math.abs(s.s)}s linear infinite ${s.s < 0 ? 'reverse' : ''}`, transformOrigin: '0px 0px' }}>
-            <circle r={s.r} fill="none" stroke={i === 2 ? (dark ? '#fff' : '#1bc4aa') : stroke} strokeWidth={s.w} pathLength="100" strokeDasharray={`${s.len * 100} 100`} strokeLinecap="butt"
+            <circle r={s.r} fill="none" stroke={i === 2 ? (dark ? '#fff' : '#b88a3a') : stroke} strokeWidth={s.w} pathLength="100" strokeDasharray={`${s.len * 100} 100`} strokeLinecap="butt"
               style={{ animation: reducedMotion() ? 'none' : `draw 1.8s ${0.2 + i * 0.15}s cubic-bezier(.2,.8,.2,1) both` }} />
           </g>
         ))}
-        <line x1="-50" x2="50" y1="0" y2="0" stroke={dark ? 'rgba(46,230,201,0.3)' : 'rgba(0,0,0,0.12)'} strokeWidth="0.2" strokeDasharray="1 2" />
-        <line y1="-50" y2="50" x1="0" x2="0" stroke={dark ? 'rgba(46,230,201,0.3)' : 'rgba(0,0,0,0.12)'} strokeWidth="0.2" strokeDasharray="1 2" />
-        <circle r="2.2" fill={dark ? '#2ee6c9' : '#0c0c0c'} />
-        <text y="4" textAnchor="middle" fontFamily="Anton" fontSize="11" fill={dark ? '#fff' : '#0c0c0c'} dy="-9">R01</text>
+        <line x1="-50" x2="50" y1="0" y2="0" stroke={dark ? 'rgba(212,162,76,0.3)' : 'rgba(0,0,0,0.12)'} strokeWidth="0.2" strokeDasharray="1 2" />
+        <line y1="-50" y2="50" x1="0" x2="0" stroke={dark ? 'rgba(212,162,76,0.3)' : 'rgba(0,0,0,0.12)'} strokeWidth="0.2" strokeDasharray="1 2" />
+        <circle r="2.2" fill={dark ? '#d4a24c' : '#1c0e0a'} />
+        <text y="4" textAnchor="middle" fontFamily="Anton" fontSize="11" fill={dark ? '#fff' : '#1c0e0a'} dy="-9">R01</text>
       </svg>
       <style>{'@keyframes spin{to{transform:rotate(360deg)}}@keyframes draw{from{stroke-dasharray:0 100}}'}</style>
     </div>
@@ -105,13 +105,13 @@ function HeroStats() {
   return (
     <div className="hero-stats">
       {[['Portals', '03'], ['Lifecycle stages', '16'], ['Fit factors', '06']].map(([k, v], i) => (
-        <div key={k} className="stack reveal" style={{ gap: 2, '--d': 300 + i * 120, borderTop: '1px solid #cfcfca', paddingTop: 10 }}>
+        <div key={k} className="stack reveal" style={{ gap: 2, '--d': 300 + i * 120, borderTop: '1px solid #d9c8ae', paddingTop: 10 }}>
           <span className="label">{k}</span>
           <span className="display" style={{ fontSize: 52 }}>{v}</span>
         </div>
       ))}
       <svg viewBox="0 0 120 50" style={{ width: 150 }} aria-hidden="true">
-        <path d="M5 40 C 25 40, 25 12, 48 14 S 70 38, 88 22 S 108 8, 116 10" fill="none" stroke="#0c0c0c" strokeWidth="1.4" pathLength="100" strokeDasharray="100" style={{ animation: 'trace 2.4s 0.6s ease-out both' }} />
+        <path d="M5 40 C 25 40, 25 12, 48 14 S 70 38, 88 22 S 108 8, 116 10" fill="none" stroke="#1c0e0a" strokeWidth="1.4" pathLength="100" strokeDasharray="100" style={{ animation: 'trace 2.4s 0.6s ease-out both' }} />
         <style>{'@keyframes trace{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}'}</style>
       </svg>
     </div>
@@ -175,7 +175,7 @@ function PipelineMap() {
   return (
     <section className="trackmap" id="pipeline" ref={ref}>
       <div className="stack" style={{ position: 'relative', zIndex: 1, gap: 14 }}>
-        <h2 className="display d-l accent-text reveal" style={{ textShadow: '0 0 30px rgba(46,230,201,0.35)' }}>The pipeline<br />so far.</h2>
+        <h2 className="display d-l accent-text reveal" style={{ textShadow: '0 0 30px rgba(212,162,76,0.35)' }}>The pipeline<br />so far.</h2>
         <div style={{ width: 22, height: 2, background: 'var(--accent)' }} />
         <p className="label reveal" style={{ color: 'var(--ink-2)', maxWidth: 260, '--d': 150 }}>Every deal is a route. Here's how a raise moves from registration to a funded close — with the host at every corner.</p>
         <div className="mono small" style={{ marginTop: 20, color: 'var(--accent)' }}>{Math.round(p * 100).toString().padStart(3, '0')}% · {stops.filter(s => p >= s[0]).at(-1)?.[1] || 'Start'}</div>
@@ -187,11 +187,11 @@ function PipelineMap() {
         <path ref={path} d="M60 460 C 110 470, 150 430, 170 380 S 200 300, 260 300 S 330 360, 380 330 S 420 220, 480 200 S 600 220, 640 160 S 690 60, 730 80 S 760 160, 720 190" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeDasharray={len} strokeDashoffset={len * (1 - p)} />
         {path.current && stops.map(([t, l]) => { const q = path.current.getPointAtLength(len * t); const on = p >= t; return (
           <g key={l} style={{ transition: 'opacity .4s', opacity: on ? 1 : 0.35 }}>
-            <rect x={q.x - 4} y={q.y - 4} width="8" height="8" fill={on ? '#2ee6c9' : '#444'} transform={`rotate(45 ${q.x} ${q.y})`} />
-            <text x={q.x + 12} y={q.y - 10} fill={on ? '#2ee6c9' : '#666'} fontFamily="JetBrains Mono" fontSize="11" letterSpacing="2">{l.toUpperCase()}</text>
+            <rect x={q.x - 4} y={q.y - 4} width="8" height="8" fill={on ? '#d4a24c' : '#4a2f24'} transform={`rotate(45 ${q.x} ${q.y})`} />
+            <text x={q.x + 12} y={q.y - 10} fill={on ? '#d4a24c' : '#7a6455'} fontFamily="JetBrains Mono" fontSize="11" letterSpacing="2">{l.toUpperCase()}</text>
           </g>); })}
-        <circle cx={pt.x} cy={pt.y} r="9" fill="#2ee6c9" opacity="0.25"><animate attributeName="r" values="7;16;7" dur="1.6s" repeatCount="indefinite" /></circle>
-        <circle cx={pt.x} cy={pt.y} r="5" fill="#2ee6c9" />
+        <circle cx={pt.x} cy={pt.y} r="9" fill="#d4a24c" opacity="0.25"><animate attributeName="r" values="7;16;7" dur="1.6s" repeatCount="indefinite" /></circle>
+        <circle cx={pt.x} cy={pt.y} r="5" fill="#d4a24c" />
       </svg>
     </section>
   );

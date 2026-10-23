@@ -9,10 +9,13 @@ import { FitRadar, PeerBars, RunwayTimeline, ConfidenceMeter, CONFIDENCE } from 
 // A swipe-deck profile: a full-bleed cover with photo-style slides and the essentials over it.
 // Every figure shown comes from the approved teaser; anything missing simply isn't shown.
 
+// Card colours come from a fixed set of jewel tones (ruby, garnet, copper, gold, amber, emerald, sapphire, rose)
+// so every generated cover sits inside the gold-and-oxblood palette.
+const JEWELS = [350, 5, 18, 32, 42, 158, 212, 335];
 export function hue(s = '') {
   let h = 0;
-  for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360;
-  return h;
+  for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 997;
+  return JEWELS[h % JEWELS.length];
 }
 
 export function coverStyle(item) {

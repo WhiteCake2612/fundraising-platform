@@ -23,12 +23,12 @@ export default function TeaserView({ c, anonymous }) {
         <div>
           <h4>Investment teaser · {stageLabel(c.stage)}</h4>
           <h2>{title}</h2>
-          <div style={{ color: '#555' }}>{[c.industry, c.sub_industry, c.business_model, c.headquarters || c.geography, c.founding_year && `Founded ${c.founding_year}`].filter(Boolean).join(' · ')}</div>
+          <div style={{ color: '#7a6455' }}>{[c.industry, c.sub_industry, c.business_model, c.headquarters || c.geography, c.founding_year && `Founded ${c.founding_year}`].filter(Boolean).join(' · ')}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <h4>Raising</h4>
           <div className="display" style={{ fontSize: 30 }}>{money(c.raise?.amount, cur)}</div>
-          <div style={{ color: '#555' }}>{c.raise?.round_size ? `Round size ${money(c.raise.round_size, cur)}` : ''}{c.raise?.seeking_lead === 1 ? ' · Seeking lead' : c.raise?.seeking_lead === 0 ? ' · Lead in place' : ''}</div>
+          <div style={{ color: '#7a6455' }}>{c.raise?.round_size ? `Round size ${money(c.raise.round_size, cur)}` : ''}{c.raise?.seeking_lead === 1 ? ' · Seeking lead' : c.raise?.seeking_lead === 0 ? ' · Lead in place' : ''}</div>
         </div>
       </div>
 

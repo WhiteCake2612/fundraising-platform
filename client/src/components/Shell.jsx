@@ -47,7 +47,7 @@ function Notifications() {
         <div className="card" style={{ position: 'absolute', right: 0, top: 44, width: 340, animation: 'dropIn 0.3s var(--ease)', boxShadow: '0 24px 60px rgba(0,0,0,0.6)', maxHeight: 420, overflow: 'auto', zIndex: 30, padding: 0 }}>
           {!q.data?.notifications.length && <div className="muted" style={{ padding: 16 }}>No notifications.</div>}
           {q.data?.notifications.map(n => (
-            <button key={n.id} onClick={() => { setOpen(false); if (n.link) nav(n.link); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 16px', border: 0, borderBottom: '1px solid var(--line)', background: n.read_at ? 'transparent' : 'rgba(46,230,201,0.06)', boxShadow: n.read_at ? 'none' : 'inset 2px 0 0 var(--accent)', color: 'inherit', cursor: 'pointer' }}>
+            <button key={n.id} onClick={() => { setOpen(false); if (n.link) nav(n.link); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 16px', border: 0, borderBottom: '1px solid var(--line)', background: n.read_at ? 'transparent' : 'rgba(212,162,76,0.06)', boxShadow: n.read_at ? 'none' : 'inset 2px 0 0 var(--accent)', color: 'inherit', cursor: 'pointer' }}>
               <div style={{ fontWeight: 600 }}>{n.title}</div>
               {n.body && <div className="small muted">{n.body}</div>}
               <div className="label">{ago(n.created_at)}</div>

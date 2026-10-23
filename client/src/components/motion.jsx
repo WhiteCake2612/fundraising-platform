@@ -23,7 +23,7 @@ export function PixelTransition() {
     const cells = [];
     for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
       const t = (1 - y / rows) * 0.55 + Math.random() * 0.45;
-      cells.push({ x, y, t, color: Math.random() < 0.16 ? '#2ee6c9' : Math.random() < 0.5 ? '#f2f2ee' : '#0b0c0d' });
+      cells.push({ x, y, t, color: Math.random() < 0.16 ? '#d4a24c' : Math.random() < 0.5 ? '#f2e7d5' : '#120806' });
     }
     const IN = 300, HOLD = 60, OUT = 340, total = IN + HOLD + OUT;
     let start, raf;
