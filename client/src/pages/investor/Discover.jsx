@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { useApi, api } from '../../lib/api.js';
 import { useMeta } from '../../components/Shell.jsx';
 import { PageHead, Async, Empty, ErrorBox } from '../../components/ui.jsx';
-import OpportunityCard from '../../components/OpportunityCard.jsx';
-import SwipeProfile, { slidesFor } from '../../components/SwipeProfile.jsx';
+import SwipeProfile, { ProfileSheet, slidesFor, hue, sectorIcon, coverStyle } from '../../components/SwipeProfile.jsx';
 import { stageLabel } from '../../lib/format.js';
 
 const THRESHOLD = 120;
@@ -27,6 +26,9 @@ export default function InvestorDiscover() {
   const current = items[index];
 
   const [fly, setFly] = useState(null);
+  const [tally, setTally] = useState({ interested: 0, passed: 0, saved: 0 });
+  const [toast, setToast] = useState(null);
+  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(null), 1800); return () => clearTimeout(t); }, [toast]);
   const act = useCallback(async (action) => {
     if (!current || fly) return;
     setErr(null);
@@ -35,6 +37,8 @@ export default function InvestorDiscover() {
       // The card flies off while the decision is recorded; it only advances once the server has accepted it.
       await Promise.all([api('/investor/swipes', { method: 'POST', body: { company_id: current.company_id, action } }), new Promise(r => setTimeout(r, 320))]);
       setLast({ id: current.company_id, action, title: current.name || `Project ${current.code}` });
+      setTally(t => ({ ...t, [action]: t[action] + 1 }));
+      if (action === 'interested') setToast(current);
       setIndex(i => i + 1);
     } catch (e) { setErr(e); }
     setFly(null);
@@ -42,7 +46,7 @@ export default function InvestorDiscover() {
 
   const undo = async () => {
     if (!last) return;
-    try { await api(`/investor/swipes/${last.id}`, { method: 'DELETE' }); setRewound(last.id); setLast(null); q.reload(true); } catch (e) { setErr(e); }
+    try { await api(`/investor/swipes/${last.id}`, { method: 'DELETE' }); setRewound(last.id); setTally(t => ({ ...t, [last.action]: Math.max(0, t[last.action] - 1) })); setLast(null); q.reload(true); } catch (e) { setErr(e); }
   };
 
   useEffect(() => {
@@ -81,17 +85,67 @@ export default function InvestorDiscover() {
       <ErrorBox error={err} />
       <Async q={q}>{() => (
         current ? (
-          <>
-            <Deck key={current.company_id} item={current} next={items[index + 1]} onAct={act} fly={fly} />
-            <div className="tp-actions">
-              <button className="tb rewind" onClick={undo} disabled={!last} aria-label={last ? `Undo ${last.action} on ${last.title}` : 'Nothing to undo'} title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8Z" /></svg></button>
-              <button className="tb big nope" onClick={() => act('passed')} aria-label="Pass" title="Pass (←)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.3 5.7a1 1 0 0 0-1.4 0L12 10.6 7.1 5.7a1 1 0 0 0-1.4 1.4l4.9 4.9-4.9 4.9a1 1 0 1 0 1.4 1.4l4.9-4.9 4.9 4.9a1 1 0 0 0 1.4-1.4L13.4 12l4.9-4.9a1 1 0 0 0 0-1.4Z" /></svg></button>
-              <button className="tb star" onClick={() => act('saved')} aria-label="Save for later" title="Save (↑)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m12 2 3 6.6 7.2.7-5.4 4.8 1.6 7.1L12 17.5 5.6 21.2l1.6-7.1L1.8 9.3 9 8.6 12 2Z" /></svg></button>
-              <button className="tb big like" onClick={() => act('interested')} aria-label="Express interest" title="Interested (→)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s-7.5-4.6-10-9.2C.4 8.6 2.3 4.5 6.2 4.5c2.2 0 3.6 1.2 4.4 2.4l1.4 2 1.4-2c.8-1.2 2.2-2.4 4.4-2.4 3.9 0 5.8 4.1 4.2 7.3C19.5 16.4 12 21 12 21Z" /></svg></button>
-              <Link className="tb info" to={`/investor/opportunities/${current.company_id}`} aria-label="View full teaser" title="Full teaser"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M14 3h7v7h-2V6.4l-9.3 9.3-1.4-1.4L17.6 5H14V3ZM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" /></svg></Link>
+          <div className="dz">
+            <aside className="dz-side">
+              <div className="dz-box">
+                <span className="label accent">This session</span>
+                <div className="dz-tally">
+                  <div className="like"><b>{tally.interested}</b><span>Interested</span></div>
+                  <div className="nope"><b>{tally.passed}</b><span>Passed</span></div>
+                  <div className="star"><b>{tally.saved}</b><span>Saved</span></div>
+                </div>
+                <div className="dz-prog"><i style={{ width: `${(index / Math.max(1, items.length)) * 100}%` }} /></div>
+                <span className="small muted">{index} reviewed · {items.length - index} to go</span>
+              </div>
+              {items.length > index + 1 && (
+                <div className="dz-box">
+                  <span className="label accent">Up next</span>
+                  {items.slice(index + 1, index + 5).map(x => (
+                    <div key={x.company_id} className="dz-next">
+                      <span className="dz-av" style={coverStyle(x)}>{sectorIcon(x.industry)}</span>
+                      <div><b>{x.name || `Project ${x.code}`}</b><small>{stageLabel(x.stage)} · {x.industry}</small></div>
+                      <em>{x.match.score}%</em>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </aside>
+
+            <div className="dz-stage" style={{ '--h': hue(current.name || current.code) }}>
+              <Deck key={current.company_id} item={current} next={items[index + 1]} onAct={act} fly={fly} />
+              <div className="tp-actions">
+                <button className="tb rewind" onClick={undo} disabled={!last} aria-label={last ? `Undo ${last.action} on ${last.title}` : 'Nothing to undo'} title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8Z" /></svg></button>
+                <button className="tb big nope" onClick={() => act('passed')} aria-label="Pass" title="Pass (←)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.3 5.7a1 1 0 0 0-1.4 0L12 10.6 7.1 5.7a1 1 0 0 0-1.4 1.4l4.9 4.9-4.9 4.9a1 1 0 1 0 1.4 1.4l4.9-4.9 4.9 4.9a1 1 0 0 0 1.4-1.4L13.4 12l4.9-4.9a1 1 0 0 0 0-1.4Z" /></svg></button>
+                <button className="tb star" onClick={() => act('saved')} aria-label="Save for later" title="Save (↑)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m12 2 3 6.6 7.2.7-5.4 4.8 1.6 7.1L12 17.5 5.6 21.2l1.6-7.1L1.8 9.3 9 8.6 12 2Z" /></svg></button>
+                <button className="tb big like" onClick={() => act('interested')} aria-label="Express interest" title="Interested (→)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s-7.5-4.6-10-9.2C.4 8.6 2.3 4.5 6.2 4.5c2.2 0 3.6 1.2 4.4 2.4l1.4 2 1.4-2c.8-1.2 2.2-2.4 4.4-2.4 3.9 0 5.8 4.1 4.2 7.3C19.5 16.4 12 21 12 21Z" /></svg></button>
+                <Link className="tb info" to={`/investor/opportunities/${current.company_id}`} aria-label="View full teaser" title="Full teaser"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M14 3h7v7h-2V6.4l-9.3 9.3-1.4-1.4L17.6 5H14V3ZM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" /></svg></Link>
+              </div>
+              <p className="tp-hint">Tap the photo to flip through · drag or use ← ↑ → · Ctrl+Z to rewind</p>
+              {toast && (
+                <div className="tp-toast" role="status" key={toast.company_id}>
+                  <span className="tp-toast-heart">💚</span>
+                  <div><b>Interest sent</b><small>{toast.name || `Project ${toast.code}`} · the host will review your introduction</small></div>
+                </div>
+              )}
             </div>
-            <p className="tp-hint">Tap the photo to flip through · drag or use ← ↑ → · Ctrl+Z to rewind</p>
-          </>
+
+            <aside className="dz-side">
+              <div className="dz-box">
+                <span className="label accent">How it works</span>
+                <ul className="dz-keys">
+                  <li><span className="k like">♥</span><div><b>Interested</b><small>Swipe right or →. Sends a pending intro to the host.</small></div></li>
+                  <li><span className="k nope">✕</span><div><b>Pass</b><small>Swipe left or ←. Revisit later with “Revisit passed”.</small></div></li>
+                  <li><span className="k star">★</span><div><b>Save</b><small>Swipe up or ↑. Keeps it on your shortlist.</small></div></li>
+                  <li><span className="k rewind">↺</span><div><b>Rewind</b><small>Ctrl+Z undoes your last decision.</small></div></li>
+                </ul>
+              </div>
+              <div className="dz-box">
+                <span className="label accent">Fit score</span>
+                <p className="small muted" style={{ margin: 0 }}>How closely a company matches your mandate — stage, sector, ticket, geography and traction. It is not a return prediction.</p>
+                <Link className="bracket" to="/investor/mandate" style={{ alignSelf: 'flex-start' }}>Tune mandate</Link>
+              </div>
+            </aside>
+          </div>
         ) : (
           <Empty title="You're up to date">
             <p>No more opportunities match your filters. New companies appear here after the host approves their teaser.</p>
@@ -139,8 +193,7 @@ function Deck({ item, next, onAct, fly }) {
         <div className="tp-stamp save" style={{ opacity: save }}>Save</div>
         <SwipeProfile item={item} slide={slide} onInfo={() => setInfo(true)} />
         <div className={`tp-sheet ${info ? 'open' : ''}`} onPointerDown={e => e.stopPropagation()} aria-hidden={!info}>
-          <button className="tp-close" onClick={() => setInfo(false)} aria-label="Close full profile">↓</button>
-          {info && <OpportunityCard item={item} />}
+          {info && <ProfileSheet item={item} onClose={() => setInfo(false)} />}
         </div>
       </div>
     </div>
