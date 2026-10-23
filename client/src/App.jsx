@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { api } from './lib/api.js';
 import { AuthCtx, MetaCtx, RequireRole } from './components/Shell.jsx';
 import { PixelTransition, ScrollProgress, RevealObserver } from './components/motion.jsx';
+import { StarField } from './components/cosmos.jsx';
 import { Landing, Login, Register, Forgot, Reset, Verify } from './pages/Public.jsx';
 import FounderDashboard from './pages/founder/Dashboard.jsx';
 import FounderCompany from './pages/founder/Company.jsx';
@@ -34,6 +35,7 @@ export default function App() {
     <AuthCtx.Provider value={{ user, setUser, logout }}>
       <MetaCtx.Provider value={meta}>
         <BrowserRouter>
+          <StarField />
           <PixelTransition />
           <ScrollProgress />
           <RevealObserver />

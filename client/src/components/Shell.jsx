@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { NavLink, Link, Outlet, useNavigate, Navigate, useLocation } from 'react-router-dom';
+import { Wordmark } from './cosmos.jsx';
 import { api, useApi } from '../lib/api.js';
 import { ago } from '../lib/format.js';
 import { Roll } from './motion.jsx';
@@ -16,7 +17,7 @@ const NAV = {
 };
 
 export function Brand() {
-  return <Link to="/" className="brand" aria-label="RAISE01 home"><span>RAISE<b>01</b></span><small>CAPITAL · SYSTEMS</small></Link>;
+  return <Link to="/" className="brand" aria-label="RAISE01 home"><Wordmark /><small>CAPITAL · SYSTEMS</small></Link>;
 }
 
 export function RequireRole({ role }) {

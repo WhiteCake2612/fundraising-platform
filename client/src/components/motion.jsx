@@ -3,44 +3,18 @@ import { useLocation } from 'react-router-dom';
 
 export const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Pixel-dissolve wipe between routes (the white/teal checker transition in the reference video).
+// Route transition: an "eclipse" veil — the page is briefly covered by night with a gold orbit ring
+// that expands and fades as the new page rises in.
 export function PixelTransition() {
-  const ref = useRef();
   const loc = useLocation();
   const first = useRef(true);
+  const [k, setK] = useState(0);
   useEffect(() => {
     if (first.current) { first.current = false; return; }
     if (reducedMotion()) return;
-    const c = ref.current;
-    const ctx = c.getContext('2d');
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const W = window.innerWidth, H = window.innerHeight;
-    c.width = W * dpr; c.height = H * dpr; c.style.width = `${W}px`; c.style.height = `${H}px`;
-    ctx.scale(dpr, dpr);
-    const S = W < 600 ? 22 : 30;
-    const cols = Math.ceil(W / S), rows = Math.ceil(H / S);
-    // Each cell gets a time to appear (sweeping bottom→top with noise) and to disappear.
-    const cells = [];
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-      const t = (1 - y / rows) * 0.55 + Math.random() * 0.45;
-      cells.push({ x, y, t, color: Math.random() < 0.16 ? '#d4a24c' : Math.random() < 0.5 ? '#f2e7d5' : '#120806' });
-    }
-    const IN = 300, HOLD = 60, OUT = 340, total = IN + HOLD + OUT;
-    let start, raf;
-    const frame = (now) => {
-      start ??= now;
-      const e = now - start;
-      ctx.clearRect(0, 0, W, H);
-      for (const cell of cells) {
-        const appear = cell.t * IN, vanish = IN + HOLD + cell.t * OUT;
-        if (e >= appear && e < vanish) { ctx.fillStyle = cell.color; ctx.fillRect(cell.x * S, cell.y * S, S - 1, S - 1); }
-      }
-      if (e < total) raf = requestAnimationFrame(frame); else ctx.clearRect(0, 0, W, H);
-    };
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
+    setK(n => n + 1);
   }, [loc.pathname]);
-  return <canvas ref={ref} className="pixel-canvas" aria-hidden="true" />;
+  return k ? <div key={k} className="eclipse" aria-hidden="true"><i /><b /></div> : null;
 }
 
 export function ScrollProgress() {
