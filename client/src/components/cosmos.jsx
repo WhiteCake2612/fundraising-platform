@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { reducedMotion } from './motion.jsx';
+import { planetTexture, sphereMap, paintSphere } from './planets.js';
 
 // Celestial visual layer: a parallax starfield, rotating jewel-tone orbs, particle constellations,
 // staggered word reveals and magnetic buttons.
@@ -75,13 +76,44 @@ export function StarField() {
   return <canvas ref={ref} className="starfield" aria-hidden="true" />;
 }
 
-// A rotating sphere drawn with layered gradients: base colour, a scrolling surface texture,
-// a lit highlight and a terminator shadow, an atmosphere glow and an optional ring.
+// A realistic rotating planet: a procedural surface map projected onto a lit sphere (see planets.js),
+// with an atmosphere glow and an optional ring. It only animates while it is on screen.
 export function Orb({ tone = 'sapphire', size = 200, ring = false, spin = 40, className = '', style }) {
+  const body = useRef(), cv = useRef();
+  useEffect(() => {
+    const el = body.current, c = cv.current;
+    let raf, visible = false, map, img, ctx, R = 0, last = 0;
+    const tex = planetTexture(tone);
+    const still = reducedMotion();
+    const setup = () => {
+      const css = el.clientWidth || size;
+      const next = Math.max(48, Math.min(css > 600 ? 640 : 480, Math.round(css * Math.min(1.5, window.devicePixelRatio || 1))));
+      if (next === R) return;
+      R = next; c.width = R; c.height = R;
+      ctx = c.getContext('2d'); img = ctx.createImageData(R, R); map = sphereMap(R, tone);
+      draw(performance.now(), true);
+    };
+    const draw = (now, force) => {
+      if (force || now - last > 33) {
+        last = now;
+        paintSphere(img, map, tex, still ? tex.w * 0.3 : ((now / 1000) / spin) * tex.w);
+        ctx.putImageData(img, 0, 0);
+      }
+      if (!still && visible) raf = requestAnimationFrame(draw);
+    };
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      cancelAnimationFrame(raf);
+      if (visible && !still) raf = requestAnimationFrame(draw);
+    }, { rootMargin: '120px' });
+    const ro = new ResizeObserver(setup);
+    setup(); io.observe(el); ro.observe(el);
+    return () => { cancelAnimationFrame(raf); io.disconnect(); ro.disconnect(); };
+  }, [tone, size, spin]);
   return (
-    <div className={`orb3d orb-${tone} ${ring ? 'has-ring' : ''} ${className}`} style={{ '--s': `${size}px`, '--spin': `${spin}s`, ...style }} aria-hidden="true">
+    <div className={`orb3d orb-${tone} ${ring ? 'has-ring' : ''} ${className}`} style={{ '--s': `${size}px`, ...style }} aria-hidden="true">
       {ring && <i className="orb-ring back" />}
-      <div className="orb-body"><i className="orb-tex" /><i className="orb-shade" /></div>
+      <div className="orb-body rendered" ref={body}><canvas ref={cv} /></div>
       {ring && <i className="orb-ring front" />}
     </div>
   );
