@@ -49,6 +49,7 @@ export default function hostRoutes({ db, secret, pipeline }) {
       },
       registrations: all("SELECT strftime('%Y-%m-%d', created_at) day, role, COUNT(*) n FROM users WHERE role!='host' AND created_at >= datetime('now','-30 days') GROUP BY day, role ORDER BY day"),
       byRoundStage: all("SELECT COALESCE(stage,'unspecified') k, COUNT(*) n FROM companies GROUP BY k ORDER BY n DESC"),
+      passReasons: all("SELECT reason k, COUNT(*) n FROM swipes WHERE action='passed' AND reason IS NOT NULL GROUP BY reason ORDER BY n DESC"),
       byIndustry: all("SELECT COALESCE(industry,'Unspecified') k, COUNT(*) n FROM companies GROUP BY k ORDER BY n DESC"),
       byPipeline: all('SELECT stage k, COUNT(*) n FROM deals GROUP BY stage'),
       capital: {

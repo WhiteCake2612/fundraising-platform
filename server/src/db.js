@@ -197,6 +197,16 @@ CREATE TABLE IF NOT EXISTS swipe_events (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Private, per-investor notes and tags on an opportunity. Never shown to founders or other investors.
+CREATE TABLE IF NOT EXISTS investor_notes (
+  investor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  note TEXT NOT NULL DEFAULT '',
+  tags TEXT NOT NULL DEFAULT '[]',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (investor_id, company_id)
+);
+
 CREATE TABLE IF NOT EXISTS info_requests (
   id INTEGER PRIMARY KEY,
   company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -300,6 +310,12 @@ export function openDb(file) {
   if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec(SCHEMA);
+  // Additive column migrations for databases created before the column existed.
+  const addColumn = (table, col, def) => {
+    if (!db.prepare(`PRAGMA table_info(${table})`).all().some(c => c.name === col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
+  };
+  addColumn('swipes', 'reason', 'TEXT');
+  addColumn('swipe_events', 'reason', 'TEXT');
   const put = db.prepare('INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)');
   put.run('match_weights', JSON.stringify(DEFAULT_WEIGHTS));
   put.run('pipeline_stages', JSON.stringify(DEFAULT_STAGES));

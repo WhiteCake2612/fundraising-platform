@@ -3,14 +3,19 @@ import { Link } from 'react-router-dom';
 import { useApi, api } from '../../lib/api.js';
 import { useMeta } from '../../components/Shell.jsx';
 import { PageHead, Async, Empty, ErrorBox } from '../../components/ui.jsx';
-import SwipeProfile, { ProfileSheet, slidesFor, hue, sectorIcon, coverStyle } from '../../components/SwipeProfile.jsx';
+import SwipeProfile, { ProfileSheet, slidesFor, hue, coverStyle } from '../../components/SwipeProfile.jsx';
+import { Icon, SectorIcon } from '../../components/icons.jsx';
 import { stageLabel } from '../../lib/format.js';
 
 const THRESHOLD = 120;
 
 export default function InvestorDiscover() {
   const meta = useMeta();
-  const [filters, setFilters] = useState({ sector: '', stage: '', geography: '', min_score: '', include_passed: '', hide_ineligible: '1' });
+  const BLANK = { sector: '', stage: '', geography: '', min_score: '', include_passed: '', hide_ineligible: '1', revenue: '', min_revenue: '', min_growth: '', min_runway: '', needs_lead: '' };
+  const [filters, setFilters] = useState(BLANK);
+  const [more, setMore] = useState(false);
+  const ADV = ['revenue', 'min_revenue', 'min_growth', 'min_runway', 'needs_lead'];
+  const advCount = ADV.filter(k => filters[k]).length;
   const qs = new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString();
   const q = useApi(`/investor/feed?${qs}`, [qs]);
   const [index, setIndex] = useState(0);
@@ -28,6 +33,14 @@ export default function InvestorDiscover() {
   const [fly, setFly] = useState(null);
   const [tally, setTally] = useState({ interested: 0, passed: 0, saved: 0 });
   const [toast, setToast] = useState(null);
+  const [passAsk, setPassAsk] = useState(null);
+  useEffect(() => { if (!passAsk || passAsk.done) return; const t = setTimeout(() => setPassAsk(null), 9000); return () => clearTimeout(t); }, [passAsk]);
+  const giveReason = async (reason) => {
+    const ask = passAsk;
+    setPassAsk({ ...ask, done: reason });
+    try { await api(`/investor/swipes/${ask.id}`, { method: 'PATCH', body: { reason } }); } catch (e) { setErr(e); }
+    setTimeout(() => setPassAsk(a => (a && a.id === ask.id ? null : a)), 900);
+  };
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(null), 1800); return () => clearTimeout(t); }, [toast]);
   const act = useCallback(async (action) => {
     if (!current || fly) return;
@@ -39,6 +52,7 @@ export default function InvestorDiscover() {
       setLast({ id: current.company_id, action, title: current.name || `Project ${current.code}` });
       setTally(t => ({ ...t, [action]: t[action] + 1 }));
       if (action === 'interested') setToast(current);
+      setPassAsk(action === 'passed' ? { id: current.company_id, name: current.name || `Project ${current.code}` } : null);
       setIndex(i => i + 1);
     } catch (e) { setErr(e); }
     setFly(null);
@@ -46,7 +60,7 @@ export default function InvestorDiscover() {
 
   const undo = async () => {
     if (!last) return;
-    try { await api(`/investor/swipes/${last.id}`, { method: 'DELETE' }); setRewound(last.id); setTally(t => ({ ...t, [last.action]: Math.max(0, t[last.action] - 1) })); setLast(null); q.reload(true); } catch (e) { setErr(e); }
+    try { await api(`/investor/swipes/${last.id}`, { method: 'DELETE' }); setRewound(last.id); setPassAsk(null); setTally(t => ({ ...t, [last.action]: Math.max(0, t[last.action] - 1) })); setLast(null); q.reload(true); } catch (e) { setErr(e); }
   };
 
   useEffect(() => {
@@ -80,6 +94,18 @@ export default function InvestorDiscover() {
           <select className="input" style={{ width: 'auto' }} value={filters.min_score} onChange={e => setFilters({ ...filters, min_score: e.target.value })} aria-label="Minimum fit"><option value="">Any fit</option><option value="50">Fit ≥ 50</option><option value="70">Fit ≥ 70</option><option value="85">Fit ≥ 85</option></select>
           <label className="row small"><input type="checkbox" checked={filters.include_passed === '1'} onChange={e => setFilters({ ...filters, include_passed: e.target.checked ? '1' : '' })} /> Revisit passed</label>
           <label className="row small"><input type="checkbox" checked={filters.hide_ineligible === '0'} onChange={e => setFilters({ ...filters, hide_ineligible: e.target.checked ? '0' : '1' })} /> Show mandate exclusions</label>
+          <button className={`btn ghost sm ${more || advCount ? 'on' : ''}`} onClick={() => setMore(m => !m)} aria-expanded={more}><Icon name="filter" size={13} /> More filters{advCount ? ` · ${advCount}` : ''}</button>
+          {JSON.stringify(filters) !== JSON.stringify(BLANK) && <button className="btn ghost sm" onClick={() => setFilters(BLANK)}>Reset</button>}
+        </div>
+      )}
+      {more && (
+        <div className="adv-filters">
+          <label><span>Revenue</span><select className="input" value={filters.revenue} onChange={e => setFilters({ ...filters, revenue: e.target.value, min_revenue: e.target.value === 'pre' ? '' : filters.min_revenue })}><option value="">Any</option><option value="yes">Revenue-generating</option><option value="pre">Pre-revenue only</option></select></label>
+          <label><span>Min revenue</span><select className="input" value={filters.min_revenue} disabled={filters.revenue === 'pre'} onChange={e => setFilters({ ...filters, min_revenue: e.target.value })}><option value="">Any</option><option value="100000">$100K+</option><option value="500000">$500K+</option><option value="1000000">$1M+</option><option value="5000000">$5M+</option><option value="20000000">$20M+</option></select></label>
+          <label><span>Min YoY growth</span><select className="input" value={filters.min_growth} onChange={e => setFilters({ ...filters, min_growth: e.target.value })}><option value="">Any</option><option value="25">25%+</option><option value="50">50%+</option><option value="100">100%+</option><option value="200">200%+</option></select></label>
+          <label><span>Min runway</span><select className="input" value={filters.min_runway} onChange={e => setFilters({ ...filters, min_runway: e.target.value })}><option value="">Any</option><option value="6">6 mo+</option><option value="12">12 mo+</option><option value="18">18 mo+</option><option value="24">24 mo+</option></select></label>
+          <label className="adv-check"><input type="checkbox" checked={filters.needs_lead === '1'} onChange={e => setFilters({ ...filters, needs_lead: e.target.checked ? '1' : '' })} /> Lead investor wanted</label>
+          <p className="small muted">Growth and runway filters exclude companies that have not disclosed those figures.</p>
         </div>
       )}
       <ErrorBox error={err} />
@@ -102,7 +128,7 @@ export default function InvestorDiscover() {
                   <span className="label accent">Up next</span>
                   {items.slice(index + 1, index + 5).map(x => (
                     <div key={x.company_id} className="dz-next">
-                      <span className="dz-av" style={coverStyle(x)}>{sectorIcon(x.industry)}</span>
+                      <span className="dz-av" style={coverStyle(x)}><SectorIcon sector={x.industry} size={18} /></span>
                       <div><b>{x.name || `Project ${x.code}`}</b><small>{stageLabel(x.stage)} · {x.industry}</small></div>
                       <em>{x.match.score}%</em>
                     </div>
@@ -120,10 +146,17 @@ export default function InvestorDiscover() {
                 <button className="tb big like" onClick={() => act('interested')} aria-label="Express interest" title="Interested (→)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s-7.5-4.6-10-9.2C.4 8.6 2.3 4.5 6.2 4.5c2.2 0 3.6 1.2 4.4 2.4l1.4 2 1.4-2c.8-1.2 2.2-2.4 4.4-2.4 3.9 0 5.8 4.1 4.2 7.3C19.5 16.4 12 21 12 21Z" /></svg></button>
                 <Link className="tb info" to={`/investor/opportunities/${current.company_id}`} aria-label="View full teaser" title="Full teaser"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M14 3h7v7h-2V6.4l-9.3 9.3-1.4-1.4L17.6 5H14V3ZM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" /></svg></Link>
               </div>
-              <p className="tp-hint">Tap the photo to flip through · drag or use ← ↑ → · Ctrl+Z to rewind</p>
+              {passAsk ? (
+                <div className="pass-ask" role="group" aria-label={`Why did you pass on ${passAsk.name}?`}>
+                  <div className="row between"><span className="small"><b>Why pass on {passAsk.name}?</b> <span className="muted">Optional — sharpens your matches</span></span><button className="pass-x" onClick={() => setPassAsk(null)} aria-label="Skip"><Icon name="x" size={14} /></button></div>
+                  {passAsk.done ? <span className="small" style={{ color: 'var(--ok)' }}><Icon name="check" size={13} /> Noted</span> : (
+                    <div className="pass-chips">{Object.entries(meta?.passReasons || {}).map(([k, l]) => <button key={k} className="chip" onClick={() => giveReason(k)}>{l}</button>)}</div>
+                  )}
+                </div>
+              ) : <p className="tp-hint">Tap the card to flip through · drag or use ← ↑ → · Ctrl+Z to rewind</p>}
               {toast && (
                 <div className="tp-toast" role="status" key={toast.company_id}>
-                  <span className="tp-toast-heart">💚</span>
+                  <span className="tp-toast-heart"><Icon name="check" size={22} stroke={2.4} /></span>
                   <div><b>Interest sent</b><small>{toast.name || `Project ${toast.code}`} · the host will review your introduction</small></div>
                 </div>
               )}

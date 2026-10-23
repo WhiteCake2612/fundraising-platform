@@ -5,27 +5,48 @@ import { PageHead, Async, Tabs, Empty, Status, Field, ActionMsg, useAction } fro
 import TeaserView from '../../components/TeaserView.jsx';
 import { FitBreakdown } from '../../components/OpportunityCard.jsx';
 import { money, stageLabel, date, human } from '../../lib/format.js';
+import Compare from '../../components/Compare.jsx';
+import { useMeta } from '../../components/Shell.jsx';
+import { Icon } from '../../components/icons.jsx';
 
 export function InvestorShortlist() {
   const q = useApi('/investor/shortlist');
   const [tab, setTab] = useState('interested');
   const a = useAction();
+  const meta = useMeta();
+  const [picked, setPicked] = useState([]);
+  const [comparing, setComparing] = useState(false);
+  const [tag, setTag] = useState('');
+  const pick = (id) => setPicked(p => (p.includes(id) ? p.filter(x => x !== id) : p.length >= 3 ? p : [...p, id]));
   return (
     <>
-      <PageHead kicker="Your decisions" title="Shortlist" />
-      <Async q={q}>{d => (
+      <PageHead kicker="Your decisions" title="Shortlist" sub="Tick up to three companies to compare them side by side." />
+      <Async q={q}>{d => {
+        const everything = [...d.interested, ...d.saved, ...d.passed];
+        const tags = [...new Set(everything.flatMap(x => x.my_note?.tags || []))].sort();
+        const rows = d[tab].filter(x => !tag || x.my_note?.tags?.includes(tag));
+        return (
         <>
           <Tabs value={tab} onChange={setTab} tabs={[{ key: 'interested', label: 'Interested', count: d.interested.length }, { key: 'saved', label: 'Saved', count: d.saved.length }, { key: 'passed', label: 'Passed', count: d.passed.length }]} />
           <ActionMsg a={a} />
-          {d[tab].length ? (
+          <div className="row" style={{ margin: '12px 0' }}>
+            {tags.length > 0 && <select className="input" style={{ width: 'auto' }} value={tag} onChange={e => setTag(e.target.value)} aria-label="Filter by tag"><option value="">All tags</option>{tags.map(t => <option key={t}>{t}</option>)}</select>}
+            <button className="btn sm" disabled={picked.length < 2} onClick={() => setComparing(true)}><Icon name="columns" size={13} /> Compare{picked.length ? ` (${picked.length})` : ''}</button>
+            {picked.length > 0 && <button className="btn ghost sm" onClick={() => setPicked([])}>Clear selection</button>}
+            {picked.length >= 3 && <span className="small muted">Comparison is limited to three so every series stays distinguishable.</span>}
+          </div>
+          {comparing && <Compare items={picked.map(id => everything.find(x => x.company_id === id)).filter(Boolean)} onClose={() => setComparing(false)} />}
+          {rows.length ? (
             <div className="table-wrap"><table>
-              <thead><tr><th>Opportunity</th><th>Stage</th><th>Raising</th><th>Fit</th><th>Introduction</th><th /></tr></thead>
-              <tbody>{d[tab].map(x => (
+              <thead><tr><th aria-label="Select" /><th>Opportunity</th><th>Stage</th><th>Raising</th><th>Fit</th><th>{tab === 'passed' ? 'Pass reason' : 'Introduction'}</th><th>My tags</th><th /></tr></thead>
+              <tbody>{rows.map(x => (
                 <tr key={x.company_id}>
+                  <td><input type="checkbox" checked={picked.includes(x.company_id)} disabled={!picked.includes(x.company_id) && picked.length >= 3} onChange={() => pick(x.company_id)} aria-label={`Select ${x.name || x.code} to compare`} /></td>
                   <td><Link to={`/investor/opportunities/${x.company_id}`}><strong>{x.name || `Project ${x.code}`}</strong></Link><div className="small muted">{x.industry} · {x.business_model}</div></td>
                   <td>{stageLabel(x.stage)}</td><td>{money(x.raise?.amount, x.currency)}</td>
                   <td className="display" style={{ fontSize: 24 }}>{x.match.score}</td>
-                  <td>{x.introduction ? <Status s={x.introduction.status} /> : <span className="muted">—</span>}</td>
+                  <td>{tab === 'passed' ? (x.pass_reason ? (meta?.passReasons?.[x.pass_reason] || human(x.pass_reason)) : <span className="muted">—</span>) : x.introduction ? <Status s={x.introduction.status} /> : <span className="muted">—</span>}</td>
+                  <td className="cmp-tags">{x.my_note?.tags?.length ? x.my_note.tags.map(t => <span key={t}>{t}</span>) : <span className="muted">—</span>}{x.my_note?.note && <Icon name="pen" size={12} title={x.my_note.note} />}</td>
                   <td className="row" style={{ flexWrap: 'nowrap' }}>
                     {tab !== 'interested' && <button className="btn sm" onClick={() => a.run(() => api('/investor/swipes', { method: 'POST', body: { company_id: x.company_id, action: 'interested' } }), 'Interest recorded.').then(() => q.reload(true)).catch(() => {})}>Interested</button>}
                     {tab === 'saved' && <button className="btn sm ghost" onClick={() => a.run(() => api('/investor/swipes', { method: 'POST', body: { company_id: x.company_id, action: 'passed' } })).then(() => q.reload(true)).catch(() => {})}>Pass</button>}
@@ -33,9 +54,10 @@ export function InvestorShortlist() {
                 </tr>
               ))}</tbody>
             </table></div>
-          ) : <Empty title={`No ${tab} opportunities`} />}
+          ) : <Empty title={tag ? `No ${tab} opportunities tagged “${tag}”` : `No ${tab} opportunities`} />}
         </>
-      )}</Async>
+        );
+      }}</Async>
     </>
   );
 }

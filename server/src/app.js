@@ -49,7 +49,7 @@ export function createApp({ dbFile, uploadDir, secret, env = process.env, inline
     const llm = llmConfig(env);
     res.json({
       stages: C.STAGES, stageLabels: C.STAGE_LABELS, sectors: C.SECTORS, businessModels: C.BUSINESS_MODELS, geographies: C.GEOGRAPHIES,
-      investorTypes: C.INVESTOR_TYPES, leadPrefs: C.LEAD_PREFS, docCategories: C.DOC_CATEGORIES, allowedExt: C.ALLOWED_EXT, maxUpload: C.MAX_UPLOAD_BYTES,
+      investorTypes: C.INVESTOR_TYPES, leadPrefs: C.LEAD_PREFS, passReasons: C.PASS_REASONS, docCategories: C.DOC_CATEGORIES, allowedExt: C.ALLOWED_EXT, maxUpload: C.MAX_UPLOAD_BYTES,
       integrations: {
         llm: llm.configured ? { status: 'configured', provider: llm.provider, model: llm.model, documentText: llm.allowDocumentText } : { status: 'not_configured' },
         email: { status: env.SMTP_URL ? 'configured' : 'not_configured' },

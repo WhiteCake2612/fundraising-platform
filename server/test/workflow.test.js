@@ -223,6 +223,39 @@ test('left swipe and undo', async () => {
   assert.equal((await investor.get('/api/investor/feed')).body.total, 1);
 });
 
+test('pass reasons, private notes, filters and analytics', async () => {
+  const c2 = (await investor.get('/api/investor/feed')).body.items[0].company_id;
+  assert.equal((await investor.patch(`/api/investor/swipes/${c2}`, { reason: 'too_early' })).status, 404, 'no decision yet');
+  await investor.post('/api/investor/swipes', { company_id: c2, action: 'saved' });
+  assert.equal((await investor.patch(`/api/investor/swipes/${c2}`, { reason: 'too_early' })).status, 409, 'reasons only apply to passes');
+  await investor.post('/api/investor/swipes', { company_id: c2, action: 'passed' });
+  assert.equal((await investor.patch(`/api/investor/swipes/${c2}`, { reason: 'not_a_reason' })).status, 400);
+  assert.equal((await investor.patch(`/api/investor/swipes/${c2}`, { reason: 'too_early' })).status, 200);
+
+  let r = await investor.put(`/api/investor/notes/${c2}`, { note: 'Revisit after Series A', tags: ['Follow-up', 'follow-up', 'fintech'] });
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.body.my_note.tags, ['follow-up', 'fintech'], 'tags are normalised and de-duplicated');
+  const item = (await investor.get('/api/investor/shortlist')).body.passed.find(x => x.company_id === c2);
+  assert.equal(item.pass_reason, 'too_early');
+  assert.equal(item.my_note.note, 'Revisit after Series A');
+  assert.ok(item.confidence && item.peers, 'cards carry data confidence and peer stats');
+  assert.equal(item.confidence.level, 'none', 'no financials disclosed means no confidence claim');
+  assert.equal((await founder2.get('/api/founder/interest')).body.notes, undefined, 'founders never see investor notes');
+  assert.equal((await founder2.put(`/api/investor/notes/${c2}`, { note: 'x', tags: [] })).status, 403);
+
+  assert.equal((await investor.get('/api/investor/feed?include_passed=1&needs_lead=1')).body.total, 0);
+  assert.equal((await investor.get('/api/investor/feed?include_passed=1&min_growth=10')).body.total, 0, 'unknown growth is excluded by a growth floor');
+
+  const a = (await investor.get('/api/investor/analytics')).body;
+  assert.equal(a.passReasons.find(x => x.k === 'too_early').n, 1);
+  assert.equal(a.funnel.find(x => x.k === 'reviewed').n, 2);
+  assert.ok(a.map.some(x => x.company_id === c2));
+  assert.equal(a.fitBins.reduce((t, b) => t + b.deck + b.interested + b.passed + b.saved, 0), a.map.length);
+
+  // Leave state as the following tests expect.
+  await investor.del(`/api/investor/swipes/${c2}`);
+});
+
 test('host controls introductions and data-room access', async () => {
   const intro = ctx.db.prepare('SELECT id FROM introductions WHERE company_id=?').get(companyId);
   let r = await investor.get(`/api/investor/documents/${docId}/url`);

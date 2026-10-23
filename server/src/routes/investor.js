@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { HttpError, asyncH, requireRole, audit, activity, notifyHosts, signDocUrl, jparse } from '../lib/core.js';
 import { tx, getSetting } from '../db.js';
-import { STAGES, INVESTOR_TYPES, LEAD_PREFS, DISCOVERABLE_STAGES } from '../lib/constants.js';
+import { STAGES, INVESTOR_TYPES, LEAD_PREFS, DISCOVERABLE_STAGES, PASS_REASONS } from '../lib/constants.js';
 import { scoreMatch } from '../services/matching.js';
 
 const arr = z.array(z.string().max(60)).max(30);
@@ -46,6 +46,46 @@ export function investorCompanyView(db, company, teaser, intro) {
   return view;
 }
 
+// How much of the approved teaser's financial picture is backed by documents rather than founder input.
+// Built only from the approved teaser snapshot, so it never reveals anything the host has not released.
+export function dataConfidence(content) {
+  const fin = content.financials || {};
+  const keys = ['revenue', 'growth', 'gross_margin', 'runway'].filter(k => fin[k]);
+  const stated = (m) => !m || m.basis === 'founder_input' || /founder/i.test(`${m.source || ''} ${m.period || ''}`);
+  // Runway is derived from cash and burn, so it is only as documented as both of its inputs.
+  const isStated = (k) => (k === 'runway' ? stated(fin.cash) || stated(fin.burn) : stated(fin[k]));
+  const documented = keys.filter(k => !isStated(k)).length;
+  const risks = content.risks || [];
+  const level = !keys.length ? 'none' : documented === keys.length ? 'documented' : documented ? 'partial' : 'founder_stated';
+  return {
+    level, metrics: keys.length, documented, founder_stated: keys.length - documented,
+    documents: (content.sources || []).length,
+    flags: { high: risks.filter(r => ['critical', 'high'].includes(r.severity)).length, other: risks.filter(r => r.severity && !['critical', 'high'].includes(r.severity)).length },
+  };
+}
+
+const PEER_METRICS = {
+  revenue: (x) => x.financials?.revenue?.value, growth: (x) => x.financials?.growth?.value,
+  gross_margin: (x) => x.financials?.gross_margin?.value, runway: (x) => x.financials?.runway?.value, raise: (x) => x.raise?.amount,
+};
+// Percentile of each metric among discoverable companies at the same stage (needs at least 3 with data).
+export function peerStats(items) {
+  const byStage = new Map();
+  for (const x of items) byStage.set(x.stage, [...(byStage.get(x.stage) || []), x]);
+  return new Map(items.map(x => {
+    const peers = byStage.get(x.stage) || [];
+    const out = {};
+    for (const [k, get] of Object.entries(PEER_METRICS)) {
+      const v = get(x);
+      const vals = peers.map(get).filter(n => typeof n === 'number' && Number.isFinite(n));
+      if (typeof v !== 'number' || !Number.isFinite(v) || vals.length < 3) continue;
+      const below = vals.filter(n => n < v).length, equal = vals.filter(n => n === v).length;
+      out[k] = { value: v, pct: Math.round(100 * (below + (equal - 1) / 2) / Math.max(1, vals.length - 1)), n: vals.length };
+    }
+    return [x.company_id, out];
+  }));
+}
+
 export default function investorRoutes({ db, secret }) {
   const r = Router();
   r.use(requireRole('investor'));
@@ -82,13 +122,17 @@ export default function investorRoutes({ db, secret }) {
     const weights = getSetting(db, 'match_weights');
     const swipes = new Map(db.prepare('SELECT company_id, action FROM swipes WHERE investor_id=?').all(uid).map(s => [s.company_id, s.action]));
     const intros = new Map(db.prepare('SELECT * FROM introductions WHERE investor_id=?').all(uid).map(i => [i.company_id, i]));
-    return discoverable().map(c => {
+    const notes = new Map(db.prepare('SELECT * FROM investor_notes WHERE investor_id=?').all(uid).map(n => [n.company_id, { note: n.note, tags: jparse(n.tags), updated_at: n.updated_at }]));
+    const reasons = new Map(db.prepare('SELECT company_id, reason FROM swipes WHERE investor_id=? AND reason IS NOT NULL').all(uid).map(s => [s.company_id, s.reason]));
+    const list = discoverable().map(c => {
       const content = jparse(c.t_content, {});
       const fin = content.financials || {};
       const match = scoreMatch(p, { ...c, metrics_revenue: fin.revenue?.value, metrics_ebitda: fin.ebitda_margin?.value != null && fin.revenue?.value != null ? fin.ebitda_margin.value * fin.revenue.value : undefined }, weights);
       const view = investorCompanyView(db, c, { id: c.t_id, version: c.t_version, content: c.t_content, reviewed_at: c.t_reviewed_at }, intros.get(c.id));
-      return { ...view, match, swipe: swipes.get(c.id) || null, introduction: intros.get(c.id) ? { status: intros.get(c.id).status } : null };
+      return { ...view, match, confidence: dataConfidence(content), swipe: swipes.get(c.id) || null, pass_reason: reasons.get(c.id) || null, my_note: notes.get(c.id) || null, introduction: intros.get(c.id) ? { status: intros.get(c.id).status } : null };
     });
+    const peers = peerStats(list);
+    return list.map(x => ({ ...x, peers: peers.get(x.company_id) }));
   }
 
   r.get('/feed', (req, res) => {
@@ -100,6 +144,14 @@ export default function investorRoutes({ db, secret }) {
     if (q.geography) list = list.filter(x => (x.geography || '').includes(q.geography));
     if (q.max_raise) list = list.filter(x => x.raise?.amount != null && x.raise.amount <= Number(q.max_raise));
     if (q.min_score) list = list.filter(x => x.match.score >= Number(q.min_score));
+    const rev = (x) => x.financials?.revenue?.value;
+    if (q.min_revenue) list = list.filter(x => rev(x) != null && rev(x) >= Number(q.min_revenue));
+    if (q.max_revenue) list = list.filter(x => rev(x) == null || rev(x) <= Number(q.max_revenue));
+    if (q.revenue === 'pre') list = list.filter(x => !rev(x));
+    if (q.revenue === 'yes') list = list.filter(x => rev(x) > 0);
+    if (q.min_growth) list = list.filter(x => x.financials?.growth?.value != null && x.financials.growth.value * 100 >= Number(q.min_growth));
+    if (q.min_runway) list = list.filter(x => x.financials?.runway?.value != null && x.financials.runway.value >= Number(q.min_runway));
+    if (q.needs_lead === '1') list = list.filter(x => x.raise?.seeking_lead === 1);
     if (q.hide_ineligible !== '0') list = list.filter(x => x.match.eligible);
     list.sort((a, b) => b.match.score - a.match.score || (b.approved_at || '').localeCompare(a.approved_at || ''));
     res.json({ items: list, total: list.length });
@@ -122,7 +174,7 @@ export default function investorRoutes({ db, secret }) {
     const c = db.prepare('SELECT * FROM companies WHERE id=?').get(company_id);
     tx(db, () => {
       db.prepare(`INSERT INTO swipes(investor_id, company_id, action, score) VALUES (?,?,?,?)
-        ON CONFLICT(investor_id, company_id) DO UPDATE SET action=excluded.action, score=excluded.score, updated_at=datetime('now')`).run(req.user.id, company_id, action, item.match.score);
+        ON CONFLICT(investor_id, company_id) DO UPDATE SET action=excluded.action, score=excluded.score, reason=NULL, updated_at=datetime('now')`).run(req.user.id, company_id, action, item.match.score);
       db.prepare('INSERT INTO swipe_events(investor_id, company_id, action) VALUES (?,?,?)').run(req.user.id, company_id, action);
       if (action === 'interested' && prev?.action !== 'interested') {
         // Interest creates a pending introduction for host review — it does not disclose anything by itself.
@@ -167,6 +219,29 @@ export default function investorRoutes({ db, secret }) {
     res.json({ ok: true });
   });
 
+  // Optional reason attached to a pass after the fact, so passing stays a single gesture.
+  r.patch('/swipes/:companyId', asyncH(async (req, res) => {
+    const cid = Number(req.params.companyId);
+    const { reason } = z.object({ reason: z.enum(Object.keys(PASS_REASONS)).nullable() }).parse(req.body);
+    const s = db.prepare('SELECT action FROM swipes WHERE investor_id=? AND company_id=?').get(req.user.id, cid);
+    if (!s) throw new HttpError(404, 'No decision recorded for this company');
+    if (s.action !== 'passed') throw new HttpError(409, 'Reasons can only be added to passes');
+    db.prepare("UPDATE swipes SET reason=?, updated_at=datetime('now') WHERE investor_id=? AND company_id=?").run(reason, req.user.id, cid);
+    db.prepare('INSERT INTO swipe_events(investor_id, company_id, action, reason) VALUES (?,?,?,?)').run(req.user.id, cid, 'pass_reason', reason);
+    res.json({ ok: true });
+  }));
+
+  const NoteSchema = z.object({ note: z.string().max(4000), tags: z.array(z.string().trim().min(1).max(30)).max(12) });
+  r.put('/notes/:companyId', asyncH(async (req, res) => {
+    const cid = Number(req.params.companyId);
+    const { note, tags } = NoteSchema.parse(req.body);
+    if (!scored(req.user.id).some(x => x.company_id === cid)) throw new HttpError(404, 'Opportunity not available');
+    const uniq = [...new Set(tags.map(t => t.toLowerCase()))];
+    db.prepare(`INSERT INTO investor_notes(investor_id, company_id, note, tags) VALUES (?,?,?,?)
+      ON CONFLICT(investor_id, company_id) DO UPDATE SET note=excluded.note, tags=excluded.tags, updated_at=datetime('now')`).run(req.user.id, cid, note, JSON.stringify(uniq));
+    res.json({ ok: true, my_note: { note, tags: uniq } });
+  }));
+
   r.get('/shortlist', (req, res) => {
     const all = scored(req.user.id);
     res.json({
@@ -208,6 +283,42 @@ export default function investorRoutes({ db, secret }) {
     const g = db.prepare('SELECT 1 FROM document_grants WHERE document_id=? AND investor_id=? AND revoked_at IS NULL').get(Number(req.params.id), req.user.id);
     if (!g) throw new HttpError(403, 'You do not have access to this document');
     res.json({ url: signDocUrl(Number(req.params.id), req.user.id, secret) });
+  });
+
+  // Deal-flow analytics computed from the investor's own decisions and the live deck.
+  r.get('/analytics', (req, res) => {
+    const uid = req.user.id;
+    const all = scored(uid);
+    const decided = all.filter(x => x.swipe);
+    const group = (rows, key) => Object.values(rows.reduce((m, x) => {
+      const k = key(x) || 'Unspecified';
+      m[k] ||= { k, interested: 0, saved: 0, passed: 0, total: 0 };
+      m[k][x.swipe] += 1; m[k].total += 1;
+      return m;
+    }, {})).sort((a, b) => b.total - a.total);
+    const bins = Array.from({ length: 10 }, (_, i) => ({ k: i === 9 ? '90-100' : `${i * 10}-${i * 10 + 9}`, deck: 0, interested: 0, passed: 0, saved: 0 }));
+    for (const x of all) { const b = bins[Math.min(9, Math.floor(x.match.score / 10))]; b[x.swipe || 'deck'] += 1; }
+    const avg = (a) => a.length ? Math.round(a.reduce((t, x) => t + x.match.score, 0) / a.length) : null;
+    const one = (sql) => db.prepare(sql).get(uid).n;
+    res.json({
+      map: all.map(x => ({
+        company_id: x.company_id, name: x.name || `Project ${x.code}`, industry: x.industry, stage: x.stage,
+        revenue: x.financials?.revenue?.value ?? null, growth: x.financials?.growth?.value ?? null, raise: x.raise?.amount ?? null,
+        currency: x.currency, score: x.match.score, eligible: x.match.eligible, swipe: x.swipe,
+      })),
+      bySector: group(decided, x => x.industry),
+      byStage: group(decided, x => x.stage),
+      fitBins: bins,
+      avgFit: { interested: avg(decided.filter(x => x.swipe === 'interested')), saved: avg(decided.filter(x => x.swipe === 'saved')), passed: avg(decided.filter(x => x.swipe === 'passed')), deck: avg(all.filter(x => !x.swipe)) },
+      passReasons: Object.entries(PASS_REASONS).map(([k, label]) => ({ k, label, n: decided.filter(x => x.pass_reason === k).length })).filter(r => r.n),
+      funnel: [
+        { k: 'reviewed', label: 'Reviewed', n: one('SELECT COUNT(*) n FROM swipes WHERE investor_id=?') },
+        { k: 'interested', label: 'Interested', n: one("SELECT COUNT(*) n FROM swipes WHERE investor_id=? AND action='interested'") },
+        { k: 'intro', label: 'Intro approved', n: one("SELECT COUNT(*) n FROM introductions WHERE investor_id=? AND status IN ('approved','completed')") },
+        { k: 'diligence', label: 'Diligence', n: one("SELECT COUNT(*) n FROM introductions i JOIN deals d ON d.company_id=i.company_id WHERE i.investor_id=? AND i.status IN ('approved','completed') AND d.stage IN ('due_diligence','negotiation','closed_funded')") },
+        { k: 'funded', label: 'Funded', n: one("SELECT COUNT(*) n FROM introductions i JOIN deals d ON d.company_id=i.company_id WHERE i.investor_id=? AND i.status IN ('approved','completed') AND d.stage='closed_funded'") },
+      ],
+    });
   });
 
   r.get('/dashboard', (req, res) => {

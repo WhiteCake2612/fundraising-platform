@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useApi } from '../../lib/api.js';
 import { PageHead, Async, Stat } from '../../components/ui.jsx';
 import { money, ago, stageLabel, human } from '../../lib/format.js';
+import { useMeta } from '../../components/Shell.jsx';
 
 function Bars({ rows, label = (k) => k }) {
   const max = Math.max(1, ...rows.map(r => r.n));
@@ -20,6 +21,7 @@ function Bars({ rows, label = (k) => k }) {
 
 export default function HostDashboard() {
   const q = useApi('/host/dashboard');
+  const meta = useMeta();
   return (
     <Async q={q} rows={6}>{d => {
       const sev = Object.fromEntries(d.findings.map(f => [f.k, f.n]));
@@ -74,6 +76,10 @@ export default function HostDashboard() {
             <div className="card"><h3>Pipeline conversion</h3><p className="small muted">Deals currently at or beyond each milestone (excluding lost / on hold).</p><Bars rows={d.funnel} /></div>
             <div className="card"><h3>Companies by round</h3><Bars rows={d.byRoundStage} label={stageLabel} /></div>
             <div className="card"><h3>Companies by industry</h3><Bars rows={d.byIndustry} /></div>
+          </div>
+
+          <div className="grid g2 section">
+            <div className="card"><h3>Why investors pass</h3><p className="small muted">Optional reasons investors gave when passing. Use it to coach founders and tune what reaches discovery.</p><Bars rows={d.passReasons || []} label={k => meta?.passReasons?.[k] || human(k)} /></div>
           </div>
 
           <div className="grid g2 section">

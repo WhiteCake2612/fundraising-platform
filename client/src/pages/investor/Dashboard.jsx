@@ -3,6 +3,7 @@ import { useApi } from '../../lib/api.js';
 import { PageHead, Async, Stat, Empty } from '../../components/ui.jsx';
 import { money, stageLabel } from '../../lib/format.js';
 import { useAuth } from '../../components/Shell.jsx';
+import InvestorAnalytics from './Analytics.jsx';
 
 export default function InvestorDashboard() {
   const q = useApi('/investor/dashboard');
@@ -47,6 +48,7 @@ export default function InvestorDashboard() {
             </div>
           </section>
         )}
+        <InvestorAnalytics />
       </>
     )}</Async>
   );

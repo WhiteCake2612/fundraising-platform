@@ -11,6 +11,12 @@ export const SECTORS = [
 export const BUSINESS_MODELS = ['SaaS', 'Marketplace', 'Transactional', 'D2C', 'Hardware', 'Services', 'Licensing', 'Other'];
 export const GEOGRAPHIES = ['India', 'Southeast Asia', 'Middle East', 'Europe', 'United Kingdom', 'North America', 'Latin America', 'Africa', 'Global'];
 export const INVESTOR_TYPES = ['angel', 'family_office', 'vc_fund', 'corporate', 'private_equity', 'other'];
+// Optional reasons an investor can attach to a pass. Used for the investor's own analytics and host insight.
+export const PASS_REASONS = {
+  too_early: 'Too early', too_late: 'Too late / too big', sector: 'Sector or model', ticket: 'Ticket or round size',
+  geography: 'Geography', traction: 'Not enough traction', market: 'Market size', competition: 'Competition',
+  more_info: 'Need more information', other: 'Other',
+};
 export const LEAD_PREFS = ['lead', 'co_invest', 'follow_on', 'any'];
 
 export const DOC_CATEGORIES = [
