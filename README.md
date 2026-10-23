@@ -30,6 +30,16 @@ Tests:
 npm --prefix server test
 ```
 
+### Demo data (optional)
+
+To try the investor deck without onboarding founders, seed 50 fictional companies (founders on `@demo.test`, websites on `.example`, all figures marked as founder input, teasers approved through the normal builder):
+
+```bash
+npm --prefix server run seed:demo
+```
+
+Remove them again with `node server/scripts/seed-demo.js --reset`. Never run this against a production database.
+
 ## Architecture
 
 | Layer | Implementation |

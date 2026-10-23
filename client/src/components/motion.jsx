@@ -72,7 +72,7 @@ export function Cursor() {
     raf = requestAnimationFrame(loop);
     document.documentElement.style.cursor = 'none';
     const style = document.createElement('style');
-    style.textContent = 'a,button,select,input,textarea,label,[role=link],.kcard,.swipe-card{cursor:none!important}';
+    style.textContent = 'a,button,select,input,textarea,label,[role=link],.kcard,.tp-card{cursor:none!important}';
     document.head.appendChild(style);
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerdown', down); window.removeEventListener('pointerup', up); cancelAnimationFrame(raf); style.remove(); document.documentElement.style.cursor = ''; };
   }, []);
