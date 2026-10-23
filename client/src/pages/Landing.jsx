@@ -41,7 +41,7 @@ function Hero() {
   };
   const vars = { '--x': lens.x, '--y': lens.y, '--r': `${lens.r}px` };
   return (
-    <section className="hero" ref={ref} onPointerMove={move} onPointerLeave={() => { target.current = 0; }} style={vars} data-cursor="">
+    <section className="hero" ref={ref} onPointerMove={move} onPointerLeave={() => { target.current = 0; }} style={vars}>
       <div className="hero-layer">
         <div className="stack" style={{ gap: 26 }}>
           <span className="label" style={{ color: '#1bc4aa' }}><Scramble text="Fundraising OS · Pre-Seed → Series B" /></span>
@@ -69,8 +69,8 @@ function Hero() {
       </div>
       <div className="hero-ring" aria-hidden="true" style={{ opacity: lens.r > 4 ? 1 : 0 }} />
       <div className="hero-cta">
-        <Link className="btn" to="/register?role=founder" data-cursor="RAISE"><Roll>I'm raising</Roll></Link>
-        <Link className="btn ghost" to="/register?role=investor" data-cursor="INVEST"><Roll>I'm investing</Roll></Link>
+        <Link className="btn" to="/register?role=founder"><Roll>I'm raising</Roll></Link>
+        <Link className="btn ghost" to="/register?role=investor"><Roll>I'm investing</Roll></Link>
       </div>
       <a href="#story" className="hero-scroll label" style={{ color: '#555', textDecoration: 'none' }}><i />Scroll</a>
     </section>
@@ -122,7 +122,7 @@ function Shot({ kind }) {
   const tilt = useTilt(5);
   const L = (w, c = 'rgba(255,255,255,0.14)') => <div style={{ height: 8, width: w, background: c, marginBottom: 8 }} />;
   return (
-    <div className="shot" ref={tilt} data-cursor="VIEW">
+    <div className="shot" ref={tilt}>
       <div className="row between" style={{ marginBottom: 16 }}><span className="label accent">{kind}.view</span><span className="label">● live</span></div>
       {kind === 'upload' && (<>{['pitch-deck.pdf', 'pl-fy24.xlsx', 'cap-table.xlsx'].map((f, i) => (
         <div key={f} className="row between" style={{ padding: '10px 0', borderBottom: '1px solid var(--line)' }}><span className="mono small">{f}</span><span className={`badge ${i === 2 ? 'b-med' : 'b-ok'}`}>{i === 2 ? 'processing' : 'processed'}</span></div>))}
@@ -218,13 +218,13 @@ export function Landing() {
             <h2 className="display d-l accent-text reveal" style={{ textAlign: 'right' }}>Keep raising<br />forward.</h2>
           </div>
           <div className="grid g2" style={{ marginTop: 48, gap: 32 }}>
-            <Link to="/register?role=founder" className="card hover corners reveal" style={{ textDecoration: 'none', padding: 28 }} data-cursor="START">
+            <Link to="/register?role=founder" className="card hover corners reveal" style={{ textDecoration: 'none', padding: 28 }}>
               <span className="label accent">For founders</span>
               <h3 className="display d-m" style={{ margin: '10px 0' }}>One profile.<br />Every right investor.</h3>
               <p className="muted">Upload once, correct what the analysis extracted, answer clarifications and track your raise. Documents stay private until the host shares them.</p>
               <span className="bracket" style={{ display: 'inline-block', marginTop: 12 }}>Start raising</span>
             </Link>
-            <Link to="/register?role=investor" className="card hover corners reveal" style={{ textDecoration: 'none', padding: 28, '--d': 150 }} data-cursor="START">
+            <Link to="/register?role=investor" className="card hover corners reveal" style={{ textDecoration: 'none', padding: 28, '--d': 150 }}>
               <span className="label accent">For investors</span>
               <h3 className="display d-m" style={{ margin: '10px 0' }}>Screened deal flow.<br />On mandate.</h3>
               <p className="muted">Comparable one-page teasers with reported figures, projections and open questions clearly separated — and a fit score that shows its working.</p>

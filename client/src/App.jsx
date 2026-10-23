@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { api } from './lib/api.js';
 import { AuthCtx, MetaCtx, RequireRole } from './components/Shell.jsx';
-import { PixelTransition, Cursor, ScrollProgress, RevealObserver } from './components/motion.jsx';
+import { PixelTransition, ScrollProgress, RevealObserver } from './components/motion.jsx';
 import { Landing, Login, Register, Forgot, Reset, Verify } from './pages/Public.jsx';
 import FounderDashboard from './pages/founder/Dashboard.jsx';
 import FounderCompany from './pages/founder/Company.jsx';
@@ -35,7 +35,6 @@ export default function App() {
       <MetaCtx.Provider value={meta}>
         <BrowserRouter>
           <PixelTransition />
-          <Cursor />
           <ScrollProgress />
           <RevealObserver />
           <Routes>

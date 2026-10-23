@@ -43,42 +43,6 @@ export function PixelTransition() {
   return <canvas ref={ref} className="pixel-canvas" aria-hidden="true" />;
 }
 
-// Dot + trailing ring cursor. Grows over interactive elements; shows a label for [data-cursor].
-export function Cursor() {
-  const dot = useRef(), ring = useRef();
-  useEffect(() => {
-    if (window.matchMedia('(hover: none), (pointer: coarse)').matches) return;
-    let x = -100, y = -100, rx = -100, ry = -100, raf;
-    const move = (e) => {
-      x = e.clientX; y = e.clientY;
-      dot.current.style.transform = `translate(${x}px, ${y}px)`;
-      const t = e.target.closest?.('[data-cursor], a, button, select, input, textarea, [role="link"], label, .kcard');
-      const r = ring.current;
-      const lbl = t?.closest?.('[data-cursor]')?.getAttribute('data-cursor');
-      r.classList.toggle('hover', !!t && !lbl);
-      r.classList.toggle('label', !!lbl);
-      r.textContent = lbl || '';
-    };
-    const down = () => ring.current.classList.add('down');
-    const up = () => ring.current.classList.remove('down');
-    const loop = () => {
-      rx += (x - rx) * 0.18; ry += (y - ry) * 0.18;
-      ring.current.style.transform = `translate(${rx}px, ${ry}px)`;
-      raf = requestAnimationFrame(loop);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerdown', down);
-    window.addEventListener('pointerup', up);
-    raf = requestAnimationFrame(loop);
-    document.documentElement.style.cursor = 'none';
-    const style = document.createElement('style');
-    style.textContent = 'a,button,select,input,textarea,label,[role=link],.kcard,.tp-card{cursor:none!important}';
-    document.head.appendChild(style);
-    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerdown', down); window.removeEventListener('pointerup', up); cancelAnimationFrame(raf); style.remove(); document.documentElement.style.cursor = ''; };
-  }, []);
-  return <><div ref={ring} className="cursor-ring" aria-hidden="true" /><div ref={dot} className="cursor-dot" aria-hidden="true" /></>;
-}
-
 export function ScrollProgress() {
   const ref = useRef();
   useEffect(() => {

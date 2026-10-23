@@ -457,13 +457,6 @@ td a:hover { color: var(--accent); border-color: var(--accent); }
 .pixel-canvas { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
 
 /* Custom cursor */
-.cursor-dot, .cursor-ring { position: fixed; top: 0; left: 0; z-index: 100; pointer-events: none; border-radius: 50%; }
-.cursor-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; background: var(--accent); }
-.cursor-ring { width: 34px; height: 34px; margin: -17px 0 0 -17px; border: 1px solid rgba(46,230,201,0.7); display: grid; place-items: center; transition: width 0.3s var(--ease), height 0.3s var(--ease), margin 0.3s var(--ease), background 0.3s, border-color 0.3s; font: 600 9px var(--mono); letter-spacing: 0.12em; color: #03201b; }
-.cursor-ring.hover { width: 56px; height: 56px; margin: -28px 0 0 -28px; background: rgba(46,230,201,0.12); }
-.cursor-ring.label { width: 74px; height: 74px; margin: -37px 0 0 -37px; background: var(--accent); border-color: var(--accent); }
-.cursor-ring.down { transform: scale(0.85); }
-@media (hover: none), (pointer: coarse) { .cursor-dot, .cursor-ring { display: none; } }
 
 /* ---------- Landing ---------- */
 .land-bar .topbar-inner { max-width: none; }
@@ -693,3 +686,46 @@ td a:hover { color: var(--accent); border-color: var(--accent); }
 .dz-av { color: #fff; }
 @media (max-width: 760px) { .cmp-radar { grid-template-columns: 1fr; } .viz-mix-row { grid-template-columns: 90px 1fr 28px; } .viz-funnel-row { grid-template-columns: 90px 1fr 28px 38px; } .cmp-grid { grid-template-columns: 110px repeat(var(--n, 3), minmax(130px, 1fr)) !important; } }
 .cmp-tags span.muted { border: 0; background: none; padding: 0; }
+
+/* Native cursors and tactile feedback (replaces the old custom cursor) */
+button:not(:disabled), [role='button'], [role='tab'], select, summary, label:has(input[type='checkbox']), input[type='checkbox'], .chip { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+.chip { transition: border-color 0.25s, color 0.25s, background 0.25s, transform 0.2s var(--ease); }
+.chip:hover { transform: translateY(-1px); }
+.chip:active, .bracket:active, .seg button:active, .pass-chips .chip:active { transform: scale(0.95); }
+.bracket { transition: background 0.3s, letter-spacing 0.4s var(--ease), transform 0.2s var(--ease); }
+.input:hover:not(:focus):not(:disabled) { border-color: #4a5056; }
+.stat { transition: border-color 0.3s, transform 0.35s var(--ease), box-shadow 0.35s; }
+.stat:hover { border-color: rgba(46,230,201,0.35); transform: translateY(-2px); box-shadow: 0 14px 30px rgba(0,0,0,0.35); }
+.dz-box { transition: border-color 0.3s, transform 0.35s var(--ease); }
+.dz-box:hover { border-color: var(--line-2); }
+.dz-next { transition: background 0.25s, transform 0.25s var(--ease); }
+.dz-next:hover { transform: translateX(3px); }
+.tp-card { transition: box-shadow 0.35s var(--ease); }
+.tp-card:not(.behind):hover { box-shadow: 0 30px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(46,230,201,0.35), 0 0 40px rgba(46,230,201,0.12); }
+.tp-chips span, .tp-badges span { transition: transform 0.25s var(--ease), background 0.25s; }
+.tp-chips span:hover, .tp-badges span:hover { transform: translateY(-2px); background: rgba(255,255,255,0.22); }
+.tp-bars i { transition: background 0.25s, transform 0.25s var(--ease); }
+.tp:hover .tp-bars i:not(.on) { background: rgba(255,255,255,0.45); }
+.tp-avatar { transition: transform 0.5s var(--ease); }
+.tp-card:not(.behind):hover .tp-avatar { transform: scale(1.04) rotate(-2deg); }
+.tb::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid currentColor; opacity: 0; transform: scale(1); pointer-events: none; }
+.tb { position: relative; }
+.tb:active:not(:disabled)::after { animation: ping 0.45s var(--ease); }
+@keyframes ping { 0% { opacity: 0.6; transform: scale(1); } 100% { opacity: 0; transform: scale(1.45); } }
+.viz-dot { transition: fill-opacity 0.2s, r 0.25s var(--ease); }
+.viz-dot:hover { r: 13; }
+tbody tr { transition: background 0.2s; }
+.cmp-cell, .cmp-head { transition: background 0.2s; }
+.cmp-cell:hover { background: rgba(255,255,255,0.025); }
+.ps-card { transition: border-color 0.3s, transform 0.35s var(--ease); }
+.ps-card:hover { border-color: rgba(255,255,255,0.12); }
+
+/* Idle swipe hint: the top card nudges right then left once, like Tinder's onboarding. */
+.tp-card.nudge { animation: nudge 1.4s var(--ease-io) both; }
+@keyframes nudge { 0%, 100% { transform: none; } 25% { transform: translateX(36px) rotate(3deg); } 55% { transform: translateX(-30px) rotate(-2.5deg); } 80% { transform: translateX(6px) rotate(0.5deg); } }
+.tp-hintarrows { position: absolute; inset: 0; z-index: 7; display: flex; justify-content: space-between; align-items: center; padding: 0 14px; pointer-events: none; animation: hintFade 1.4s var(--ease-io) both; }
+.tp-hintarrows span { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(0,0,0,0.5); backdrop-filter: blur(6px); }
+.tp-hintarrows .l { color: #fd5068; } .tp-hintarrows .r { color: #3ce38f; }
+@keyframes hintFade { 0%, 100% { opacity: 0; } 20%, 75% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .tp-card.nudge, .tp-hintarrows { animation: none; display: none; } .stat:hover, .chip:hover, .dz-next:hover { transform: none; } }

@@ -8,6 +8,8 @@ import { Icon, SectorIcon } from '../../components/icons.jsx';
 import { stageLabel } from '../../lib/format.js';
 
 const THRESHOLD = 120;
+// The idle swipe hint plays once per visit, on the first card the investor lingers on.
+let hinted = false;
 
 export default function InvestorDiscover() {
   const meta = useMeta();
@@ -197,8 +199,15 @@ function Deck({ item, next, onAct, fly }) {
   const [dy, setDy] = useState(0);
   const [slide, setSlide] = useState(0);
   const [info, setInfo] = useState(false);
+  const [nudge, setNudge] = useState(false);
+  const touched = useRef(false);
+  useEffect(() => {
+    if (hinted || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t = setTimeout(() => { if (touched.current) return; hinted = true; setNudge(true); setTimeout(() => setNudge(false), 1500); }, 3500);
+    return () => clearTimeout(t);
+  }, []);
   const count = slidesFor(item).length;
-  const down = (e) => { if (info || (e.button !== undefined && e.button !== 0)) return; start.current = { x: e.clientX, y: e.clientY }; ref.current.setPointerCapture?.(e.pointerId); };
+  const down = (e) => { touched.current = true; setNudge(false); if (info || (e.button !== undefined && e.button !== 0)) return; start.current = { x: e.clientX, y: e.clientY }; ref.current.setPointerCapture?.(e.pointerId); };
   const move = (e) => { if (!start.current) return; setDx(e.clientX - start.current.x); setDy(e.clientY - start.current.y); };
   const up = (e) => {
     if (!start.current) return;
@@ -218,9 +227,10 @@ function Deck({ item, next, onAct, fly }) {
   return (
     <div className="tp-deck">
       {next && <div className="tp-card behind" aria-hidden="true" style={fly ? { transform: 'scale(1)', opacity: 1 } : undefined}><SwipeProfile item={next} /></div>}
-      <div ref={ref} className="tp-card" data-cursor={info ? undefined : 'DRAG'} role="article" aria-label={item.name || `Project ${item.code}`}
+      <div ref={ref} className={`tp-card ${nudge ? 'nudge' : ''}`} role="article" aria-label={item.name || `Project ${item.code}`}
         style={{ transform: out || `translate(${dx}px, ${Math.min(0, dy)}px) rotate(${dx / 18}deg)`, transition: start.current ? 'none' : `transform ${fly ? 0.34 : 0.28}s var(--ease)` }}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+        {nudge && <div className="tp-hintarrows" aria-hidden="true"><span className="l"><Icon name="x" size={18} stroke={2.4} /></span><span className="r"><Icon name="check" size={18} stroke={2.4} /></span></div>}
         <div className="tp-stamp like" style={{ opacity: like }}>Like</div>
         <div className="tp-stamp nope" style={{ opacity: nope }}>Nope</div>
         <div className="tp-stamp save" style={{ opacity: save }}>Save</div>
